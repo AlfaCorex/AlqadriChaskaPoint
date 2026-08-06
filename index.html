@@ -4111,8 +4111,6 @@
         }
         
         const db = firebase.firestore();
-
-        // Flag to prevent snapshot loops overriding manual user ordering/editing
         let isSyncingFromRemote = false;
 
         // FAST BACKGROUND FIRESTORE LISTENERS
@@ -4125,8 +4123,6 @@
                 snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
                 
                 if (items.length > 0) {
-                    // Only update if local array is completely empty initially, 
-                    // preserving custom manual sorting done during the session.
                     if (menuData.length === 0) {
                         menuData.push(...items);
                         workingMenuData = JSON.parse(JSON.stringify(menuData));
@@ -4152,7 +4148,6 @@
                 
                 if (posts.length > 0) {
                     if (feedPosts.length === 0) {
-                        posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                         feedPosts.push(...posts);
                         workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
                     }
@@ -4183,7 +4178,7 @@
             (error) => { console.error("❌ Firestore Orders Error:", error.message); }
         );
 
-        // 4. Sync CRM Registered Users (Preserving insertion order without alphabetical forcing)
+        // 4. Sync CRM Registered Users (Keeps exact insertion order without alphabetical override)
         db.collection("users").onSnapshot(
             (snapshot) => {
                 const users = [];
@@ -4205,7 +4200,7 @@
             if (!item || !item.id) return;
             isSyncingFromRemote = true;
             db.collection("menu").doc(item.id.toString()).set(item, { merge: true }).then(() => {
-                setTimeout(() => { isSyncingFromRemote = false; }, 800);
+                setTimeout(() => { isSyncingFromRemote = false; }, 600);
             });
         };
 
@@ -4213,7 +4208,7 @@
             if (!id) return;
             isSyncingFromRemote = true;
             db.collection("menu").doc(id.toString()).delete().then(() => {
-                setTimeout(() => { isSyncingFromRemote = false; }, 800);
+                setTimeout(() => { isSyncingFromRemote = false; }, 600);
             });
         };
 
@@ -4221,7 +4216,7 @@
             if (!post || !post.id) return;
             isSyncingFromRemote = true;
             db.collection("posts").doc(post.id.toString()).set(post, { merge: true }).then(() => {
-                setTimeout(() => { isSyncingFromRemote = false; }, 800);
+                setTimeout(() => { isSyncingFromRemote = false; }, 600);
             });
         };
 
@@ -4229,7 +4224,7 @@
             if (!id) return;
             isSyncingFromRemote = true;
             db.collection("posts").doc(id.toString()).delete().then(() => {
-                setTimeout(() => { isSyncingFromRemote = false; }, 800);
+                setTimeout(() => { isSyncingFromRemote = false; }, 600);
             });
         };
 
@@ -4261,23 +4256,16 @@
         const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
         window.handleFoodFormSubmit = function(event) {
             if (orig_handleFoodFormSubmit) orig_handleFoodFormSubmit(event);
+            const editId = document.getElementById('editFoodId')?.value;
             if (menuData && menuData.length > 0) {
-                const target = menuData[menuData.length - 1];
+                const target = editId ? menuData.find(x => x.id == editId) : menuData[menuData.length - 1];
                 if (target) window.dbSaveFoodItem(target);
             }
         };
 
-        // Hook for updating catalog item edits
-        const orig_loadFoodToEdit = window.loadFoodToEdit;
-        window.loadFoodToEdit = function(id) {
-            if (orig_loadFoodToEdit) orig_loadFoodToEdit(id);
-        };
-
-        // Hook for saving catalog order sorting changes
         const orig_saveCatalogOrderChanges = window.saveCatalogOrderChanges;
         window.saveCatalogOrderChanges = function() {
             if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
-            // Save all items with updated sequence mapping
             menuData.forEach(item => window.dbSaveFoodItem(item));
         };
 
@@ -4290,13 +4278,13 @@
         const orig_handleFeedPostSubmit = window.handleFeedPostSubmit;
         window.handleFeedPostSubmit = function(event) {
             if (orig_handleFeedPostSubmit) orig_handleFeedPostSubmit(event);
+            const editId = document.getElementById('editPostId')?.value;
             if (feedPosts && feedPosts.length > 0) {
-                const target = feedPosts[0];
+                const target = editId ? feedPosts.find(p => p.id == editId) : feedPosts[0];
                 if (target) window.dbSavePost(target);
             }
         };
 
-        // Hook for saving post reordering sequence changes
         const orig_savePostOrderChanges = window.savePostOrderChanges;
         window.savePostOrderChanges = function() {
             if (orig_savePostOrderChanges) orig_savePostOrderChanges();
