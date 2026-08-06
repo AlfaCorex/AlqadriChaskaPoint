@@ -4188,7 +4188,7 @@
             (error) => { console.error("❌ Firestore Orders Error:", error.message); }
         );
 
-        // 4. Sync CRM Registered Users (Preserving insertion order without alphabetical override)
+        // 4. Sync CRM Registered Users (Preserving strict insertion order)
         db.collection("users").onSnapshot(
             (snapshot) => {
                 const users = [];
@@ -4276,12 +4276,12 @@
             db.collection("users").doc(cleanId).delete();
         };
 
-        // FRONTEND ACTION HOOKS TO SYNC REAL-TIME TO FIRESTORE
+        // OVERRIDE ALL FRONTEND ACTION FUNCTIONS TO SYNC REAL-TIME TO FIRESTORE
+        
+        // 1. Food Form Submit & Edit & Catalog Order
         const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
         window.handleFoodFormSubmit = function(event) {
             if (orig_handleFoodFormSubmit) orig_handleFoodFormSubmit(event);
-            
-            // Look up precisely by editFoodId or default to the last added item
             const editId = document.getElementById('editFoodId')?.value;
             if (typeof menuData !== 'undefined' && menuData.length > 0) {
                 const target = editId ? menuData.find(x => x.id == editId) : menuData[menuData.length - 1];
@@ -4303,11 +4303,10 @@
             window.dbDeleteFoodItem(id);
         };
 
+        // 2. Feed Posts Submit & Edit & Post Order & Deletion
         const orig_handleFeedPostSubmit = window.handleFeedPostSubmit;
         window.handleFeedPostSubmit = function(event) {
             if (orig_handleFeedPostSubmit) orig_handleFeedPostSubmit(event);
-            
-            // Look up precisely by editPostId or default to the top post
             const editId = document.getElementById('editPostId')?.value;
             if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
                 const target = editId ? feedPosts.find(p => p.id == editId) : feedPosts[0];
@@ -4329,6 +4328,7 @@
             window.dbDeletePost(postId);
         };
 
+        // 3. Social Engagement (Comments, Replies, Likes)
         const orig_submitComment = window.submitComment;
         window.submitComment = function(id) {
             if (orig_submitComment) orig_submitComment(id);
@@ -4399,6 +4399,7 @@
             if (post) window.dbSavePost(post);
         };
 
+        // 4. Order Management & Checkout
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
         window.finalizeOrderAndSendWhatsApp = function() {
             if (orig_finalizeOrder) orig_finalizeOrder();
@@ -4422,6 +4423,7 @@
             if (ord && ord.id) window.dbDeleteOrder(ord.id);
         };
 
+        // 5. CRM User Registration & Deletion
         const orig_registerUser = window.registerUser;
         window.registerUser = function() {
             if (orig_registerUser) orig_registerUser();
