@@ -4054,25 +4054,6 @@
     </script>
 </body>
 </html>
-1.  Firestore Security Rules: Firebase Console -> Firestore Database -> Rules
-    tab mein jaen aur rule yeh rakhein:
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-        match /{document=**} {
-          allow read, write: if true;
-        }
-      }
-    }
-2.  Authorized Domains: Firebase Console -> Authentication -> Settings ->
-    Authorized domains mein ja kar apna GitHub Pages ka domain (jaise
-    yourusername.github.io) add karein.
-
-Step 2: Live Server Fix Backend Script
-
-Apni HTML file ke end (ya script file) mein puranay backend script ki jagah yeh
-updated script paste karein:
-
 <!-- Firebase SDK Libraries (10.12.0 UMD) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -4146,16 +4127,14 @@ updated script paste karein:
                     return 0;
                 });
 
-                if (typeof menuData !== 'undefined') {
-                    menuData.length = 0;
-                    if (items.length > 0) {
-                        menuData.push(...items);
-                        try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
-                    } else {
-                        try { localStorage.removeItem('acp_cached_menu'); } catch(e){}
-                    }
-                    workingMenuData = JSON.parse(JSON.stringify(menuData));
+                menuData.length = 0;
+                if (items.length > 0) {
+                    menuData.push(...items);
+                    try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
+                } else {
+                    try { localStorage.removeItem('acp_cached_menu'); } catch(e){}
                 }
+                workingMenuData = JSON.parse(JSON.stringify(menuData));
 
                 if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                 if (typeof renderLocalMenu === 'function') renderLocalMenu();
@@ -4179,16 +4158,14 @@ updated script paste karein:
                     return (b.timestamp || 0) - (a.timestamp || 0);
                 });
 
-                if (typeof feedPosts !== 'undefined') {
-                    feedPosts.length = 0;
-                    if (posts.length > 0) {
-                        feedPosts.push(...posts);
-                        try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
-                    } else {
-                        try { localStorage.removeItem('acp_cached_posts'); } catch(e){}
-                    }
-                    workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
+                feedPosts.length = 0;
+                if (posts.length > 0) {
+                    feedPosts.push(...posts);
+                    try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
+                } else {
+                    try { localStorage.removeItem('acp_cached_posts'); } catch(e){}
                 }
+                workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
                 if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
                 if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
@@ -4203,11 +4180,9 @@ updated script paste karein:
                 const orders = [];
                 snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
                 
-                if (typeof ordersList !== 'undefined') {
-                    ordersList.length = 0;
-                    if (orders.length > 0) {
-                        ordersList.push(...orders);
-                    }
+                ordersList.length = 0;
+                if (orders.length > 0) {
+                    ordersList.push(...orders);
                 }
 
                 if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
@@ -4216,7 +4191,7 @@ updated script paste karein:
             (error) => { console.error("❌ Firestore Orders Error:", error.message); }
         );
 
-        // 4. Sync CRM Registered Users
+        // 4. Sync CRM Registered Users (Sorted by Addition Order)
         db.collection("users").onSnapshot(
             (snapshot) => {
                 const users = [];
@@ -4224,11 +4199,9 @@ updated script paste karein:
 
                 users.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-                if (typeof registeredUsers !== 'undefined') {
-                    registeredUsers.length = 0;
-                    if (users.length > 0) {
-                        registeredUsers.push(...users);
-                    }
+                registeredUsers.length = 0;
+                if (users.length > 0) {
+                    registeredUsers.push(...users);
                 }
 
                 if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
@@ -4283,217 +4256,184 @@ updated script paste karein:
             db.collection("users").doc(cleanId).delete();
         };
 
-        // SAFELY APPLY HOOKS AFTER HTML & ALL SCRIPTS ARE FULLY LOADED
-        function applyBackendHooks() {
-            if (window._acp_backend_attached) return;
-            window._acp_backend_attached = true;
-
-            const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
-            window.handleFoodFormSubmit = function(event) {
-                const editId = document.getElementById('editFoodId')?.value;
-                if (orig_handleFoodFormSubmit) orig_handleFoodFormSubmit(event);
-                if (typeof menuData !== 'undefined' && menuData.length > 0) {
-                    const target = editId ? menuData.find(x => x.id == editId) : menuData[menuData.length - 1];
-                    if (target) {
-                        if (target.order === undefined) target.order = menuData.indexOf(target);
-                        window.dbSaveFoodItem(target);
-                    }
+        // FRONTEND ACTION HOOKS FOR IMMEDIATE REAL-TIME FIRESTORE SYNC
+        const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
+        window.handleFoodFormSubmit = function(event) {
+            const editId = document.getElementById('editFoodId')?.value;
+            if (orig_handleFoodFormSubmit) orig_handleFoodFormSubmit(event);
+            if (menuData && menuData.length > 0) {
+                const target = editId ? menuData.find(x => x.id == editId) : menuData[menuData.length - 1];
+                if (target) {
+                    if (target.order === undefined) target.order = menuData.indexOf(target);
+                    window.dbSaveFoodItem(target);
                 }
-            };
+            }
+        };
 
-            const orig_saveCatalogOrderChanges = window.saveCatalogOrderChanges;
-            window.saveCatalogOrderChanges = function() {
-                if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
-                if (typeof menuData !== 'undefined' && menuData.length > 0) {
-                    menuData.forEach((item, idx) => {
-                        item.order = idx;
-                        window.dbSaveFoodItem(item);
-                    });
+        const orig_saveCatalogOrderChanges = window.saveCatalogOrderChanges;
+        window.saveCatalogOrderChanges = function() {
+            if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
+            if (menuData && menuData.length > 0) {
+                menuData.forEach((item, idx) => {
+                    item.order = idx;
+                    window.dbSaveFoodItem(item);
+                });
+            }
+        };
+
+        const orig_deleteFoodCatalog = window.deleteFoodCatalog;
+        window.deleteFoodCatalog = function(id) {
+            if (orig_deleteFoodCatalog) orig_deleteFoodCatalog(id);
+            window.dbDeleteFoodItem(id);
+        };
+
+        const orig_handleFeedPostSubmit = window.handleFeedPostSubmit;
+        window.handleFeedPostSubmit = function(event) {
+            const editId = document.getElementById('editPostId')?.value;
+            if (orig_handleFeedPostSubmit) orig_handleFeedPostSubmit(event);
+            if (feedPosts && feedPosts.length > 0) {
+                const target = editId ? feedPosts.find(p => p.id == editId) : feedPosts[0];
+                if (target) {
+                    if (target.order === undefined) target.order = feedPosts.indexOf(target);
+                    window.dbSavePost(target);
                 }
-            };
+            }
+        };
 
-            const orig_deleteFoodCatalog = window.deleteFoodCatalog;
-            window.deleteFoodCatalog = function(id) {
-                if (orig_deleteFoodCatalog) orig_deleteFoodCatalog(id);
-                window.dbDeleteFoodItem(id);
-            };
+        const orig_savePostOrderChanges = window.savePostOrderChanges;
+        window.savePostOrderChanges = function() {
+            if (orig_savePostOrderChanges) orig_savePostOrderChanges();
+            if (feedPosts && feedPosts.length > 0) {
+                feedPosts.forEach((post, idx) => {
+                    post.order = idx;
+                    window.dbSavePost(post);
+                });
+            }
+        };
 
-            const orig_handleFeedPostSubmit = window.handleFeedPostSubmit;
-            window.handleFeedPostSubmit = function(event) {
-                const editId = document.getElementById('editPostId')?.value;
-                if (orig_handleFeedPostSubmit) orig_handleFeedPostSubmit(event);
-                if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
-                    const target = editId ? feedPosts.find(p => p.id == editId) : feedPosts[0];
-                    if (target) {
-                        if (target.order === undefined) target.order = feedPosts.indexOf(target);
-                        window.dbSavePost(target);
-                    }
-                }
-            };
+        const orig_deleteFeedPost = window.deleteFeedPost;
+        window.deleteFeedPost = function(postId) {
+            if (orig_deleteFeedPost) orig_deleteFeedPost(postId);
+            window.dbDeletePost(postId);
+        };
 
-            const orig_savePostOrderChanges = window.savePostOrderChanges;
-            window.savePostOrderChanges = function() {
-                if (orig_savePostOrderChanges) orig_savePostOrderChanges();
-                if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
-                    feedPosts.forEach((post, idx) => {
-                        post.order = idx;
-                        window.dbSavePost(post);
-                    });
-                }
-            };
+        const orig_submitComment = window.submitComment;
+        window.submitComment = function(id) {
+            if (orig_submitComment) orig_submitComment(id);
+            const post = feedPosts.find(p => p.id === id);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_deleteFeedPost = window.deleteFeedPost;
-            window.deleteFeedPost = function(postId) {
-                if (orig_deleteFeedPost) orig_deleteFeedPost(postId);
-                window.dbDeletePost(postId);
-            };
+        const orig_submitUserReply = window.submitUserReply;
+        window.submitUserReply = function() {
+            const postId = parseInt(document.getElementById('userReplyPostId')?.value);
+            if (orig_submitUserReply) orig_submitUserReply();
+            if (postId) {
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            }
+        };
 
-            const orig_submitComment = window.submitComment;
-            window.submitComment = function(id) {
-                if (orig_submitComment) orig_submitComment(id);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === id);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_likePost = window.likePost;
+        window.likePost = function(id) {
+            if (orig_likePost) orig_likePost(id);
+            const post = feedPosts.find(p => p.id === id);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_submitUserReply = window.submitUserReply;
-            window.submitUserReply = function() {
-                const postId = parseInt(document.getElementById('userReplyPostId')?.value);
-                if (orig_submitUserReply) orig_submitUserReply();
-                if (postId && typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_likeComment = window.likeComment;
+        window.likeComment = function(postId, commentIndex) {
+            if (orig_likeComment) orig_likeComment(postId, commentIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_likePost = window.likePost;
-            window.likePost = function(id) {
-                if (orig_likePost) orig_likePost(id);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === id);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_dislikeComment = window.dislikeComment;
+        window.dislikeComment = function(postId, commentIndex) {
+            if (orig_dislikeComment) orig_dislikeComment(postId, commentIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_likeComment = window.likeComment;
-            window.likeComment = function(postId, commentIndex) {
-                if (orig_likeComment) orig_likeComment(postId, commentIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_likeReply = window.likeReply;
+        window.likeReply = function(postId, commentIndex, replyIndex) {
+            if (orig_likeReply) orig_likeReply(postId, commentIndex, replyIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_dislikeComment = window.dislikeComment;
-            window.dislikeComment = function(postId, commentIndex) {
-                if (orig_dislikeComment) orig_dislikeComment(postId, commentIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_dislikeReply = window.dislikeReply;
+        window.dislikeReply = function(postId, commentIndex, replyIndex) {
+            if (orig_dislikeReply) orig_dislikeReply(postId, commentIndex, replyIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_likeReply = window.likeReply;
-            window.likeReply = function(postId, commentIndex, replyIndex) {
-                if (orig_likeReply) orig_likeReply(postId, commentIndex, replyIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_deleteComment = window.deleteComment;
+        window.deleteComment = function(postId, commentIndex) {
+            if (orig_deleteComment) orig_deleteComment(postId, commentIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_dislikeReply = window.dislikeReply;
-            window.dislikeReply = function(postId, commentIndex, replyIndex) {
-                if (orig_dislikeReply) orig_dislikeReply(postId, commentIndex, replyIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_deleteReply = window.deleteReply;
+        window.deleteReply = function(postId, commentIndex, replyIndex) {
+            if (orig_deleteReply) orig_deleteReply(postId, commentIndex, replyIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_deleteComment = window.deleteComment;
-            window.deleteComment = function(postId, commentIndex) {
-                if (orig_deleteComment) orig_deleteComment(postId, commentIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_saveEditComment = window.saveEditComment;
+        window.saveEditComment = function(postId, commentIndex) {
+            if (orig_saveEditComment) orig_saveEditComment(postId, commentIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_deleteReply = window.deleteReply;
-            window.deleteReply = function(postId, commentIndex, replyIndex) {
-                if (orig_deleteReply) orig_deleteReply(postId, commentIndex, replyIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_saveEditReply = window.saveEditReply;
+        window.saveEditReply = function(postId, commentIndex, replyIndex) {
+            if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
+            const post = feedPosts.find(p => p.id === postId);
+            if (post) window.dbSavePost(post);
+        };
 
-            const orig_saveEditComment = window.saveEditComment;
-            window.saveEditComment = function(postId, commentIndex) {
-                if (orig_saveEditComment) orig_saveEditComment(postId, commentIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
+        window.finalizeOrderAndSendWhatsApp = function() {
+            if (orig_finalizeOrder) orig_finalizeOrder();
+            if (ordersList && ordersList.length > 0) {
+                window.dbSaveOrder(ordersList[0]);
+            }
+        };
 
-            const orig_saveEditReply = window.saveEditReply;
-            window.saveEditReply = function(postId, commentIndex, replyIndex) {
-                if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
-                if (typeof feedPosts !== 'undefined') {
-                    const post = feedPosts.find(p => p.id === postId);
-                    if (post) window.dbSavePost(post);
-                }
-            };
+        const orig_approveAdminOrder = window.approveAdminOrder;
+        window.approveAdminOrder = function(index) {
+            if (orig_approveAdminOrder) orig_approveAdminOrder(index);
+            if (ordersList && ordersList[index]) {
+                window.dbSaveOrder(ordersList[index]);
+            }
+        };
 
-            const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
-            window.finalizeOrderAndSendWhatsApp = function() {
-                if (orig_finalizeOrder) orig_finalizeOrder();
-                if (typeof ordersList !== 'undefined' && ordersList.length > 0) {
-                    window.dbSaveOrder(ordersList[0]);
-                }
-            };
+        const orig_removeAdminOrder = window.removeAdminOrder;
+        window.removeAdminOrder = function(index) {
+            const ord = ordersList ? ordersList[index] : null;
+            if (orig_removeAdminOrder) orig_removeAdminOrder(index);
+            if (ord && ord.id) window.dbDeleteOrder(ord.id);
+        };
 
-            const orig_approveAdminOrder = window.approveAdminOrder;
-            window.approveAdminOrder = function(index) {
-                if (orig_approveAdminOrder) orig_approveAdminOrder(index);
-                if (typeof ordersList !== 'undefined' && ordersList[index]) {
-                    window.dbSaveOrder(ordersList[index]);
-                }
-            };
+        const orig_registerUser = window.registerUser;
+        window.registerUser = function() {
+            if (orig_registerUser) orig_registerUser();
+            if (currentUser) {
+                if (!currentUser.timestamp) currentUser.timestamp = Date.now();
+                window.dbSaveUser(currentUser);
+            }
+        };
 
-            const orig_removeAdminOrder = window.removeAdminOrder;
-            window.removeAdminOrder = function(index) {
-                const ord = (typeof ordersList !== 'undefined') ? ordersList[index] : null;
-                if (orig_removeAdminOrder) orig_removeAdminOrder(index);
-                if (ord && ord.id) window.dbDeleteOrder(ord.id);
-            };
-
-            const orig_registerUser = window.registerUser;
-            window.registerUser = function() {
-                if (orig_registerUser) orig_registerUser();
-                if (typeof currentUser !== 'undefined' && currentUser) {
-                    if (!currentUser.timestamp) currentUser.timestamp = Date.now();
-                    window.dbSaveUser(currentUser);
-                }
-            };
-
-            const orig_removeCustomerRecord = window.removeCustomerRecord;
-            window.removeCustomerRecord = function(idx) {
-                const user = (typeof registeredUsers !== 'undefined') ? registeredUsers[idx] : null;
-                if (orig_removeCustomerRecord) orig_removeCustomerRecord(idx);
-                if (user && user.phone) window.dbDeleteUser(user.phone);
-            };
-        }
-
-        // Attach hooks reliably after document parsing completes
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', applyBackendHooks);
-        } else {
-            applyBackendHooks();
-        }
-        window.addEventListener('load', applyBackendHooks);
+        const orig_removeCustomerRecord = window.removeCustomerRecord;
+        window.removeCustomerRecord = function(idx) {
+            const user = registeredUsers ? registeredUsers[idx] : null;
+            if (orig_removeCustomerRecord) orig_removeCustomerRecord(idx);
+            if (user && user.phone) window.dbDeleteUser(user.phone);
+        };
     })();
 </script>
