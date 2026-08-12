@@ -2502,7 +2502,7 @@
                                                 <button onclick="dislikeReply(${post.id}, ${actualIndex}, ${repIdx})" class="flex items-center gap-1 hover:text-slate-800 transition-all">
                                                     <i class="fa-regular fa-thumbs-down"></i> <span>${repDislikes}</span>
                                                 </button>
-                                                <button onclick="openUserReplyModal(${post.id}, ${actualIndex}, '${rep.commenter.replace(/'/g, "\\'")}')" class="font-bold hover:text-primary transition-all">Reply</button>
+                                                <button onclick="openUserReplyModal(${post.id}, ${actualIndex}, '${rep.commenter.replace(/'/g, "\\\'")}')" class="font-bold hover:text-primary transition-all">Reply</button>
                                             </div>
                                         </div>
                                     </div>
@@ -2519,7 +2519,7 @@
                             `;
                         } else {
                             repliesHtml += `
-                                <button onclick="openUserReplyModal(${post.id}, ${actualIndex}, '${c.commenter.replace(/'/g, "\\'")}')" class="text-[10px] font-extrabold text-slate-505 hover:text-[#FF5A36] mt-1 ml-8 block">
+                                <button onclick="openUserReplyModal(${post.id}, ${actualIndex}, '${c.commenter.replace(/'/g, "\\\'")}')" class="text-[10px] font-extrabold text-slate-505 hover:text-[#FF5A36] mt-1 ml-8 block">
                                     <i class="fa-solid fa-reply mr-1"></i> Reply
                                 </button>
                             `;
@@ -2551,7 +2551,7 @@
                                         <button onclick="dislikeComment(${post.id}, ${actualIndex})" class="flex items-center gap-1 hover:text-slate-800 transition-all">
                                             <i class="fa-regular fa-thumbs-down"></i> <span>${dislikesCount}</span>
                                         </button>
-                                        <button onclick="openUserReplyModal(${post.id}, ${actualIndex}, '${c.commenter.replace(/'/g, "\\'")}')" class="font-bold hover:text-primary transition-all">Reply</button>
+                                        <button onclick="openUserReplyModal(${post.id}, ${actualIndex}, '${c.commenter.replace(/'/g, "\\\'")}')" class="font-bold hover:text-primary transition-all">Reply</button>
                                     </div>
                                 </div>
                             </div>
@@ -2660,12 +2660,12 @@
                                 <span>${totalCommentsCount}</span>
                             </button>
                             
-                            <button onclick="downloadPostMedia('${post.image}', '${post.title.replace(/'/g, "\\'")}')" class="flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-[#FF5A36] transition-all" title="Download Image">
+                            <button onclick="downloadPostMedia('${post.image}', '${post.title.replace(/'/g, "\\\\'")}')" class="flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-[#FF5A36] transition-all" title="Download Image">
                                 <i class="fa-solid fa-download text-sm"></i>
                                 <span>Download</span>
                             </button>
 
-                            <button onclick="sharePost(${post.id}, '${post.title.replace(/'/g, "\\'")}', '${post.desc.replace(/\r?\n/g, " ").replace(/'/g, "\\'")}')" class="flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-emerald-505 transition-all">
+                            <button onclick="sharePost(${post.id}, '${post.title.replace(/'/g, "\\\\'")}', '${post.desc.replace(/\r?\n/g, " ").replace(/'/g, "\\\\'")}')" class="flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-emerald-505 transition-all">
                                 <i class="fa-solid fa-share text-sm"></i>
                                 <span>Share</span>
                             </button>
@@ -3774,7 +3774,7 @@
 
                         <div class="flex items-center justify-between text-[10px] font-bold pt-1.5 border-t border-slate-200 text-slate-600">
                             <span class="text-rose-505 flex items-center gap-1">
-                                <i class="fa-solid fa-heart"></i> ${post.likes} Likes
+                                <i class="fa-solid fa-heart text-rose-500"></i> ${post.likes} Likes
                             </span>
                             <span class="text-sky-605 flex items-center gap-1 font-extrabold">
                                 <i class="fa-regular fa-comment"></i> ${totalComments} Comments
@@ -3786,16 +3786,18 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-end gap-1 pt-1.5 border-t border-slate-200">
-                            <button onclick="movePostItem(${post.id}, 'up')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1" title="Move Up">
-                                <i class="fa-solid fa-arrow-up"></i>
-                            </button>
-                            <button onclick="movePostItem(${post.id}, 'down')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1" title="Move Down">
-                                <i class="fa-solid fa-arrow-down"></i>
-                            </button>
+                        <div class="flex items-center justify-between pt-1.5 border-t border-slate-200">
                             <button onclick="loadPostToEdit(${post.id})" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1">
                                 <i class="fa-solid fa-pen-to-square"></i> Edit
                             </button>
+                            <div class="flex items-center gap-1">
+                                <button onclick="movePostItem(${post.id}, 'up')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1" title="Move Up">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+                                <button onclick="movePostItem(${post.id}, 'down')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1" title="Move Down">
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </button>
+                            </div>
                             <button onclick="deleteFeedPost(${post.id})" class="px-2 py-1 bg-red-50 hover:bg-red-500 text-red-655 hover:text-white border border-red-200 rounded-md text-[10px] font-bold transition-all flex items-center gap-1">
                                 <i class="fa-solid fa-trash-can"></i> Delete
                             </button>
