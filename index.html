@@ -4551,7 +4551,7 @@
             (error) => { console.error("❌ Firestore Orders Error:", error.message); }
         );
 
-        // 4. Sync CRM Registered Users (Sorted by Addition Order)
+        // 4. Sync CRM Registered Users
         db.collection("users").onSnapshot(
             (snapshot) => {
                 const users = [];
@@ -4617,6 +4617,7 @@
         };
 
         // FRONTEND ACTION HOOKS FOR IMMEDIATE REAL-TIME FIRESTORE SYNC
+
         const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
         window.handleFoodFormSubmit = function(event) {
             const editId = document.getElementById('editFoodId')?.value;
@@ -4639,6 +4640,22 @@
                     window.dbSaveFoodItem(item);
                 });
             }
+        };
+
+        // Catalog Item Hide/Unhide Sync Hook
+        const orig_toggleCatalogItemHide = window.toggleCatalogItemHide;
+        window.toggleCatalogItemHide = function(id) {
+            if (orig_toggleCatalogItemHide) orig_toggleCatalogItemHide(id);
+            const item = menuData.find(x => x.id == id);
+            if (item) window.dbSaveFoodItem(item);
+        };
+
+        // Catalog Item Available/Unavailable Sync Hook
+        const orig_toggleCatalogItemAvailability = window.toggleCatalogItemAvailability;
+        window.toggleCatalogItemAvailability = function(id) {
+            if (orig_toggleCatalogItemAvailability) orig_toggleCatalogItemAvailability(id);
+            const item = menuData.find(x => x.id == id);
+            if (item) window.dbSaveFoodItem(item);
         };
 
         const orig_deleteFoodCatalog = window.deleteFoodCatalog;
@@ -4669,6 +4686,14 @@
                     window.dbSavePost(post);
                 });
             }
+        };
+
+        // Feed Post Hide/Show Sync Hook
+        const orig_togglePostHide = window.togglePostHide;
+        window.togglePostHide = function(id) {
+            if (orig_togglePostHide) orig_togglePostHide(id);
+            const post = feedPosts.find(p => p.id == id);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_deleteFeedPost = window.deleteFeedPost;
