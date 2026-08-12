@@ -453,12 +453,11 @@
 
         .grid-local-food {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
             margin-bottom: 12px;
         }
 
-        /* Local Delicacies / Cold Drinks cards modified with zero padding to make images bigger and edge-to-edge */
         .local-mini-card {
             border-radius: var(--radius-sm);
             padding: 0;
@@ -478,7 +477,7 @@
 
         .local-mini-card img {
             width: 100%;
-            height: 55px;
+            height: 75px;
             object-fit: cover;
             margin: 0 0 2px 0;
             border: none;
@@ -486,11 +485,11 @@
         }
 
         .local-title-compact {
-            font-size: 0.65rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--secondary);
             line-height: 1.2;
-            height: 24px;
+            height: 28px;
             overflow: hidden;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -501,7 +500,7 @@
         }
 
         .local-price-compact {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 808;
             color: var(--primary);
             margin-bottom: 4px;
@@ -657,7 +656,6 @@
             clip-path: polygon(0% 0%, 50% 0%, 50% 100%, 0% 100%);
         }
 
-        /* Print Media Configurations */
         @media print {
             body * { visibility: hidden; }
             .receipt-container, .receipt-container * { visibility: visible; }
@@ -687,18 +685,15 @@
                                 <i class="fa-solid fa-burger"></i>
                             </div>
                         </div>
-                        <!-- Simplified simple bold clean font for website name -->
                         <span class="header-title-text" style="font-family: 'Plus Jakarta Sans', sans-serif !important;">Alqadri Chaska Point</span>
                     </a>
                     
                     <div class="flex items-center gap-2">
-                        <!-- Notification Bell Icon -->
                         <button onclick="openNotificationsModal()" class="p-1.5 text-slate-700 hover:text-primary transition-all relative" title="Notifications">
                             <i class="fa-solid fa-bell text-base"></i>
                             <span id="navBellBadge" class="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white hidden animate-pulse"></span>
                         </button>
 
-                        <!-- User Account Icon displaying only First Spelling -->
                         <button id="navUserBtn" onclick="openUserModal()" class="transition-all" title="User Account">
                             <!-- Dynamic Content Rendered by JS -->
                         </button>
@@ -718,15 +713,16 @@
                 </div>
             </div>
         </header>
-<section id="customer-hero" class="app-hero no-print">
-    <h1 class="hero-title-compact" style="color: #0f172a; font-family: 'Playfair Display', serif !important; font-size: 1.70rem; font-style: normal; font-weight: 750;">
-        <span class="text-slate-905" style="color: #000000; font-family: 'Playfair Display', serif !important; font-size: 1.70rem; font-style: normal; font-weight: 750;">Premium</span> 
-        <span style="color: #FE5A35; font-family: 'Playfair Display', serif !important; font-size: 1.70rem; font-weight: 750;">Twist of Taste</span>
-    </h1>
-    <p class="hero-desc-compact" style="color: #64738C; font-normals: sans-serif; font-size: 0.80rem; font-weight: 400;">
-        Fresh daily local bites and premium fast food prepared with secret spices of Gujranwala.
-    </p>
-</section>
+
+        <section id="customer-hero" class="app-hero no-print">
+            <h1 class="hero-title-compact" style="color: #0f172a; font-family: 'Playfair Display', serif !important; font-size: 1.70rem; font-style: normal; font-weight: 750;">
+                <span class="text-slate-905" style="color: #000000; font-family: 'Playfair Display', serif !important; font-size: 1.70rem; font-style: normal; font-weight: 750;">Premium</span> 
+                <span style="color: #FE5A35; font-family: 'Playfair Display', serif !important; font-size: 1.70rem; font-weight: 750;">Twist of Taste</span>
+            </h1>
+            <p class="hero-desc-compact" style="color: #64738C; font-size: 0.80rem; font-weight: 400;">
+                Fresh daily local bites and premium fast food prepared with secret spices of Gujranwala.
+            </p>
+        </section>
 
         <!-- Dynamic Main Views -->
         <main class="app-main flex-grow">
@@ -744,7 +740,6 @@
                     </div>
                 </div>
 
-                <!-- Professional Partition Line -->
                 <hr class="border-t-2 border-slate-200/80 my-5">
 
                 <!-- Category 2: Local Food Items Section -->
@@ -757,7 +752,6 @@
                     </div>
                 </div>
 
-                <!-- Professional Partition Line -->
                 <hr class="border-t-2 border-slate-200/80 my-5">
 
                 <!-- Category 3: Cold Drinks & Juices Section -->
@@ -816,7 +810,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Action Buttons Grid with Cancel Option -->
                             <div class="flex items-center gap-2 w-full mt-3">
                                 <button class="btn-order-approve btn-action-effect flex-1 !py-2.5 !px-3 !text-xs !rounded-xl" onclick="openCheckoutConfirmModal()">
                                     <i class="fa-solid fa-circle-check"></i> Place Order
@@ -881,6 +874,27 @@
 
     </div>
 
+    <!-- PRODUCT NOT AVAILABLE POPUP MODAL (Updated format per requirements) -->
+    <div id="productNotAvailableModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10006] hidden flex items-center justify-center p-4" onclick="closeProductNotAvailableModal()">
+        <div class="bg-white rounded-[24px] max-w-xs w-full p-6 border border-slate-200 relative shadow-2xl space-y-4 text-center" onclick="event.stopPropagation()">
+            <button onclick="closeProductNotAvailableModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </button>
+            <div class="w-12 h-12 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-2xl mx-auto shadow-inner">
+                <span>😔</span>
+            </div>
+            <div class="space-y-2">
+                <div class="text-xs font-black text-slate-800">Dear User Sorry..!</div>
+                <hr class="border-t border-slate-200 my-1">
+                <div class="text-xs font-black text-primary" id="unavailableItemNameTitle">Product Name</div>
+                <p class="text-xs text-rose-600 font-extrabold pt-1">Aap ki select ki gai product is waqt available nahin hy</p>
+            </div>
+            <button onclick="closeProductNotAvailableModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all shadow-md">
+                Got it
+            </button>
+        </div>
+    </div>
+
     <!-- COLD DRINK VARIANT MODAL SELECTOR (Multi-Quantity per Option starting at 0) -->
     <div id="drinkVariantModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10005] hidden flex items-center justify-center p-4" onclick="closeDrinkVariantModal()">
         <div class="bg-white rounded-[24px] max-w-xs w-full p-5 border border-slate-200 relative shadow-2xl space-y-4 text-center" onclick="event.stopPropagation()">
@@ -891,7 +905,6 @@
                 <i class="fa-solid fa-wine-glass"></i>
             </div>
             
-            <!-- Updated Variant Modal Header matching exact request -->
             <div>
                 <div class="inline-block bg-slate-100 text-slate-900 font-extrabold text-xs px-3 py-1 rounded-full uppercase tracking-wider mb-1.5 shadow-sm">
                     Select Variants
@@ -918,7 +931,6 @@
                 <i class="fa-solid fa-circle-xmark text-xl"></i>
             </button>
 
-            <!-- Confirm Order Details center-aligned with confirmation icon -->
             <div class="flex flex-col items-center justify-center border-b border-slate-100 pb-3">
                 <div class="w-10 h-10 bg-orange-100 text-[#FF5A36] rounded-full flex items-center justify-center text-lg shrink-0 mb-1">
                     <i class="fa-solid fa-circle-check"></i>
@@ -927,13 +939,11 @@
                 <p class="text-[10px] text-slate-404">Review selected items & delivery address</p>
             </div>
 
-            <!-- Home Delivery Note made a little smaller and centered -->
             <div class="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1.5 text-center mx-auto max-w-[280px]">
                 <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
                 <span>Note: Home delivery facility is not available.</span>
             </div>
 
-            <!-- Items & Balance Summary -->
             <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 text-left">
                 <div id="checkoutModalItemsList" class="space-y-1 max-h-32 overflow-y-auto pr-1">
                     <!-- Dynamic Item Lines -->
@@ -944,7 +954,6 @@
                 </div>
             </div>
 
-            <!-- Customer Name & Location Form with distance before confirm & place order button -->
             <form onsubmit="event.preventDefault(); finalizeOrderAndSendWhatsApp();" class="space-y-3 text-left">
                 <div class="space-y-2.5 pb-2">
                     <div>
@@ -963,7 +972,6 @@
                     </div>
                 </div>
 
-                <!-- Confirm and place order button with spacing -->
                 <button type="submit" class="w-full py-3 bg-[#FF5A36] hover:bg-[#E04825] text-white font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2 mt-4">
                     <i class="fa-brands fa-whatsapp text-base"></i> Confirm and place order
                 </button>
@@ -978,7 +986,6 @@
                 <i class="fa-solid fa-circle-xmark text-xl"></i>
             </button>
             
-            <!-- Auth Switcher Box (Sign In vs Register) -->
             <div id="userAuthContainer">
                 <div class="flex bg-slate-100 p-1 rounded-xl mb-4 text-xs font-bold">
                     <button type="button" onclick="switchAuthMode('signin')" id="btnAuthTabSignIn" class="flex-1 py-1.5 rounded-lg text-center transition-all bg-white text-[#FF5A36] shadow-sm">
@@ -989,7 +996,6 @@
                     </button>
                 </div>
 
-                <!-- 1. Sign In Tab (For Already Registered Users) -->
                 <div id="userSignInView">
                     <div class="text-center mb-3">
                         <h3 class="text-sm font-bold text-slate-905">Welcome Back!</h3>
@@ -998,7 +1004,6 @@
 
                     <form onsubmit="event.preventDefault(); signInUser();" class="space-y-3">
                         <div>
-                            <!-- Fixed to stay above mobile keyboard popup -->
                             <input type="tel" id="signInPhone" required oninput="formatPhoneInput(this)" maxlength="12" placeholder="03XX-XXXXXXX *" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-xs font-bold" style="position: relative; z-index: 10000;">
                         </div>
                         <button type="submit" class="w-full py-2.5 bg-[#FF5A36] hover:bg-[#E04825] text-white font-bold rounded-lg text-xs transition-all shadow-md">
@@ -1007,7 +1012,6 @@
                     </form>
                 </div>
 
-                <!-- 2. Registration View (For First-Time Visitors) -->
                 <div id="userRegView" class="hidden">
                     <div class="text-center mb-3">
                         <h3 class="text-sm font-bold text-slate-905">Register New Account</h3>
@@ -1022,7 +1026,6 @@
                             <input type="tel" id="regPhone" required oninput="formatPhoneInput(this)" maxlength="12" placeholder="03XX-XXXXXXX *" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-xs font-normal">
                         </div>
                         <div>
-                            <!-- Updated placeholder as requested -->
                             <input type="text" id="regLocation" required placeholder="Location/City or Village *" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-xs font-normal">
                         </div>
                         <div>
@@ -1035,7 +1038,6 @@
                 </div>
             </div>
 
-            <!-- Profile View with Sign Out (Updated to remove exit account text) -->
             <div id="userProfileView" class="hidden text-center">
                 <div class="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center text-2xl text-[#FF5A36] mx-auto mb-3 shadow-inner">
                     <i class="fa-solid fa-user-check"></i>
@@ -1125,7 +1127,7 @@
         </div>
     </div>
 
-    <!-- Admin Authentication Modal Panel (Fonts updated to normal & simple) -->
+    <!-- Admin Authentication Modal Panel -->
     <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10000] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[24px] max-w-xs w-full p-6 border border-slate-205 shadow-2xl relative">
             <button onclick="closeAdminAuth()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -1151,7 +1153,6 @@
     <div id="admin-page" class="hidden min-h-screen bg-slate-50 w-full relative z-[1000] pb-20">
         <div class="max-w-[480px] mx-auto p-4">
             
-            <!-- Mobile Dashboard Banner matching original style -->
             <div class="flex justify-between items-center bg-slate-900 text-white p-4 rounded-2xl shadow-xl mb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-[#FF5A36] flex items-center justify-center text-white text-lg shadow-lg border border-slate-800 shrink-0">
@@ -1233,7 +1234,6 @@
                         <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[9px] font-black"><span id="adminCatalogCount">0</span> Items</span>
                     </div>
 
-                    <!-- Compact 4-column layout for mobile screen fit -->
                     <div class="grid grid-cols-4 gap-1 w-full">
                         <button onclick="filterAdminCatalog('all')" id="catFilterAll" class="px-1 py-1 rounded-md text-[8.5px] font-black bg-[#FF5A36] text-white shadow-sm text-center truncate">All</button>
                         <button onclick="filterAdminCatalog('fast')" id="catFilterFast" class="px-1 py-1 rounded-md text-[8.5px] font-bold bg-slate-100 text-slate-605 hover:bg-slate-200 text-center truncate">Fast</button>
@@ -1242,12 +1242,12 @@
                     </div>
 
                     <div class="overflow-x-auto bg-slate-50 rounded-xl border border-slate-100">
-                        <table class="w-full text-left border-collapse min-w-[280px]">
+                        <table class="w-full border-collapse min-w-[280px]">
                             <thead class="bg-slate-100 text-slate-500 text-[8.5px] font-black uppercase">
                                 <tr>
-                                    <th class="p-2">Product</th>
-                                    <th class="p-2 text-right">Price</th>
-                                    <th class="p-2 text-right">Actions</th>
+                                    <th class="p-2 text-center">Product</th>
+                                    <th class="p-2 text-center">Price</th>
+                                    <th class="p-2 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="adminCatalogRows" class="divide-y divide-slate-100 text-[11px] bg-white">
@@ -1256,10 +1256,13 @@
                         </table>
                     </div>
 
-                    <!-- Catalog Update Action Button Centered -->
-                    <div id="catalogUpdateBar" class="hidden pt-2 flex justify-center">
+                    <!-- Catalog Update & Cancel Buttons Bar -->
+                    <div id="catalogUpdateBar" class="hidden pt-2 flex items-center justify-center gap-2">
                         <button onclick="saveCatalogOrderChanges()" class="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-[11px] transition-all shadow-md flex items-center gap-1.5 active:scale-95">
                             <i class="fa-solid fa-circle-check text-xs"></i> Save Catalog Order Changes
+                        </button>
+                        <button onclick="cancelCatalogOrderChanges()" class="py-2 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-[11px] transition-all shadow-sm">
+                            Cancel
                         </button>
                     </div>
                 </div>
@@ -1293,9 +1296,7 @@
                             </div>
                         </div>
 
-                        <!-- COLD DRINKS VARIANT OPTIONS CONFIG (Appears only if Cold Drinks is selected) -->
                         <div id="drinkVariantsConfigBox" class="hidden bg-orange-50/50 p-3 rounded-xl border border-orange-200 space-y-2">
-                            <!-- Header centered with Check All / Uncheck All buttons -->
                             <div class="flex items-center justify-between border-b border-orange-200/60 pb-1.5">
                                 <span class="text-[11px] text-slate-800 uppercase font-black tracking-wider text-center flex-1">Available Flavor Variants</span>
                                 <div class="flex items-center gap-1.5">
@@ -1348,7 +1349,6 @@
 
             <!-- CATEGORY 3: PUBLISH POST -->
             <div id="admin-sec-feed" class="hidden space-y-4">
-                <!-- Modified order: Active Posts first, Broadcast Post second -->
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <button type="button" onclick="switchFeedSubTab('list')" id="btnSubFeedList" class="py-2 px-3 rounded-xl text-xs font-black text-center transition-all bg-[#FF5A36] text-white shadow-sm border border-[#FF5A36] flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-newspaper"></i> Active Posts
@@ -1414,10 +1414,13 @@
                         <!-- Dynamic Post Cards Injected Here -->
                     </div>
 
-                    <!-- Post Update Action Button Centered -->
-                    <div id="postUpdateBar" class="hidden pt-3 flex justify-center">
-                        <button onclick="savePostOrderChanges()" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center gap-2 active:scale-95">
-                            <i class="fa-solid fa-circle-check text-sm"></i> Save Post Order Changes
+                    <!-- Post Update & Cancel Buttons Bar -->
+                    <div id="postUpdateBar" class="hidden pt-3 flex items-center justify-center gap-2">
+                        <button onclick="savePostOrderChanges()" class="py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center gap-1.5 active:scale-95">
+                            <i class="fa-solid fa-circle-check text-xs"></i> Save Post Order Changes
+                        </button>
+                        <button onclick="cancelPostOrderChanges()" class="py-2 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition-all shadow-sm">
+                            Cancel
                         </button>
                     </div>
                 </div>
@@ -1592,7 +1595,6 @@
         let workingMenuData = [];
         let workingFeedPosts = [];
 
-        // Menu Data initialized empty as requested
         let menuData = [];
 
         let ordersList = [];
@@ -1845,7 +1847,7 @@
             if (!container) return;
 
             container.innerHTML = '';
-            const fastFoodItems = menuData.filter(x => x.category === 'fast');
+            const fastFoodItems = menuData.filter(x => x.category === 'fast' && x.isHidden !== true);
 
             if(fastFoodItems.length === 0) {
                 container.innerHTML = `<div class="col-span-3 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No fast food items added yet.</div>`;
@@ -1889,10 +1891,10 @@
             if (!container) return;
 
             container.innerHTML = '';
-            const localItems = menuData.filter(x => x.category === 'local');
+            const localItems = menuData.filter(x => x.category === 'local' && x.isHidden !== true);
 
             if(localItems.length === 0) {
-                container.innerHTML = `<div class="col-span-4 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No local items added yet.</div>`;
+                container.innerHTML = `<div class="col-span-3 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No local items added yet.</div>`;
                 return;
             }
 
@@ -1932,10 +1934,10 @@
             if (!container) return;
 
             container.innerHTML = '';
-            const drinkItems = menuData.filter(x => x.category === 'drinks');
+            const drinkItems = menuData.filter(x => x.category === 'drinks' && x.isHidden !== true);
 
             if(drinkItems.length === 0) {
-                container.innerHTML = `<div class="col-span-4 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No drinks added yet.</div>`;
+                container.innerHTML = `<div class="col-span-3 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No drinks added yet.</div>`;
                 return;
             }
 
@@ -1975,10 +1977,14 @@
             });
         }
 
-        // Handle Cold Drink Click & Prompt Variant Modal with quantities starting at 0
         function handleDrinkQtyClick(itemId, change) {
             const item = menuData.find(x => x.id == itemId);
             if (!item) return;
+
+            if (item.isAvailable === false) {
+                openProductNotAvailableModal(item.name);
+                return;
+            }
 
             if (change > 0) {
                 if (item.variants && item.variants.length > 0) {
@@ -1996,13 +2002,25 @@
             }
         }
 
+        function openProductNotAvailableModal(itemName) {
+            const modal = document.getElementById('productNotAvailableModal');
+            const titleEl = document.getElementById('unavailableItemNameTitle');
+            if (titleEl) titleEl.innerText = itemName;
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeProductNotAvailableModal() {
+            const modal = document.getElementById('productNotAvailableModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
         function openDrinkVariantModal(item) {
             const modal = document.getElementById('drinkVariantModal');
             const titleEl = document.getElementById('modalDrinkTitle');
 
             variantQuantities = {};
             item.variants.forEach(v => {
-                variantQuantities[v] = 0; // Starts at 0 so user explicitly selects anything of choice
+                variantQuantities[v] = 0;
             });
 
             if (titleEl) titleEl.innerText = item.name;
@@ -2042,9 +2060,8 @@
             }
         }
 
-        // Custom phone formatting key listener helper
         function formatPhoneInput(input) {
-            let value = input.value.replace(/\D/g, ''); // Remove non-numeric characters
+            let value = input.value.replace(/\D/g, '');
             if (value.length > 4) {
                 value = value.slice(0, 4) + '-' + value.slice(4, 11);
             }
@@ -2340,8 +2357,9 @@
             if (!container) return;
 
             container.innerHTML = '';
+            const activeFeedPosts = feedPosts.filter(p => p.isHidden !== true);
             
-            if(feedPosts.length === 0) {
+            if(activeFeedPosts.length === 0) {
                 container.innerHTML = `
                     <div class="bg-white rounded-3xl p-8 text-center border border-slate-200">
                         <i class="fa-solid fa-square-rss text-3xl text-slate-300 block mb-2"></i>
@@ -2351,7 +2369,7 @@
                 return;
             }
 
-            feedPosts.forEach(post => {
+            activeFeedPosts.forEach(post => {
                 let identifier = currentUser ? currentUser.phone : (guestSessionName || "guest_session");
                 if (!post.likedUsers) post.likedUsers = [];
                 post.isLiked = post.likedUsers.includes(identifier);
@@ -2494,7 +2512,6 @@
                                             </div>
                                             ${replyBodyHtml}
                                             
-                                            <!-- Sub-comment action toolbar -->
                                             <div class="flex items-center gap-4 text-[10px] text-slate-550 pt-0.5">
                                                 <button onclick="likeReply(${post.id}, ${actualIndex}, ${repIdx})" class="flex items-center gap-1 hover:text-slate-800 transition-all">
                                                     <i class="fa-regular fa-thumbs-up"></i> <span>${repLikes}</span>
@@ -2543,7 +2560,6 @@
                                     </div>
                                     ${commentBodyHtml}
                                     
-                                    <!-- Comment action toolbar -->
                                     <div class="flex items-center gap-4 text-xs text-slate-505 pt-0.5">
                                         <button onclick="likeComment(${post.id}, ${actualIndex})" class="flex items-center gap-1 hover:text-slate-800 transition-all">
                                             <i class="fa-regular fa-thumbs-up"></i> <span>${likesCount}</span>
@@ -3056,7 +3072,6 @@
                 status: 'Pending'
             });
 
-            // Reconfigured WhatsApp messaging template with custom spacers and branding alignment
             let waMsg = `*🛒 New Order*\n`;
             waMsg += `*Order ID:* ${orderId}\n`;
             waMsg += `*Customer:* ${name}\n`;
@@ -3097,6 +3112,14 @@
         }
 
         function updateQty(id, change) {
+            const item = menuData.find(x => x.id == id);
+            if (!item) return;
+
+            if (item.isAvailable === false && change > 0) {
+                openProductNotAvailableModal(item.name);
+                return;
+            }
+
             const currentQty = cartItems[id] || 0;
             const newQty = Math.max(0, currentQty + change);
             
@@ -3266,7 +3289,6 @@
             const loc = document.getElementById('regLocation').value.trim();
             const email = document.getElementById('regEmail').value.trim() || '';
             
-            // Format date as day-month-year  ...  Time (e.g. 11-08-2026  ...  06:25 PM)
             const d = new Date();
             const day = String(d.getDate()).padStart(2, '0');
             const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -3280,7 +3302,7 @@
             }
 
             const newUser = { name, phone, location: loc, email, regDate };
-            registeredUsers.unshift(newUser); // New user added to top of list as requested
+            registeredUsers.unshift(newUser);
             currentUser = newUser; 
             localStorage.setItem('acp_current_user', JSON.stringify(currentUser));
 
@@ -3652,6 +3674,36 @@
             showNotification('Catalog order updated successfully!');
         }
 
+        function cancelCatalogOrderChanges() {
+            workingMenuData = JSON.parse(JSON.stringify(menuData));
+            renderAdminCatalog();
+            const updateBar = document.getElementById('catalogUpdateBar');
+            if (updateBar) updateBar.classList.add('hidden');
+            showNotification('Changes cancelled.', 'warning');
+        }
+
+        function toggleCatalogItemHide(id) {
+            const item = workingMenuData.find(x => x.id === id);
+            if (!item) return;
+            item.isHidden = !item.isHidden;
+            menuData = JSON.parse(JSON.stringify(workingMenuData));
+            renderAdminCatalog();
+            renderCustomerMenu();
+            renderLocalMenu();
+            renderDrinksMenu();
+            showNotification(item.isHidden ? 'Product hidden from customer view.' : 'Product is now visible on customer view.');
+        }
+
+        function toggleCatalogItemAvailability(id) {
+            const item = workingMenuData.find(x => x.id === id);
+            if (!item) return;
+            if (item.isAvailable === undefined) item.isAvailable = true;
+            item.isAvailable = !item.isAvailable;
+            menuData = JSON.parse(JSON.stringify(workingMenuData));
+            renderAdminCatalog();
+            showNotification(item.isAvailable ? 'Product marked as Available.' : 'Product marked as Not Available.');
+        }
+
         function movePostItem(id, direction) {
             const index = workingFeedPosts.findIndex(p => p.id === id);
             if (index === -1) return;
@@ -3677,6 +3729,24 @@
             const updateBar = document.getElementById('postUpdateBar');
             if (updateBar) updateBar.classList.add('hidden');
             showNotification('Feed post order updated successfully!');
+        }
+
+        function cancelPostOrderChanges() {
+            workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
+            renderAdminPostsList();
+            const updateBar = document.getElementById('postUpdateBar');
+            if (updateBar) updateBar.classList.add('hidden');
+            showNotification('Changes cancelled.', 'warning');
+        }
+
+        function togglePostHide(id) {
+            const post = workingFeedPosts.find(p => p.id === id);
+            if (!post) return;
+            post.isHidden = !post.isHidden;
+            feedPosts = JSON.parse(JSON.stringify(workingFeedPosts));
+            renderAdminPostsList();
+            renderCustomerSocialFeeds();
+            showNotification(post.isHidden ? 'Post hidden from social feed.' : 'Post is now visible on social feed.');
         }
 
         function renderAdminCatalog() {
@@ -3712,29 +3782,52 @@
                     categoryBadge = '<span class="text-[8px] bg-sky-50 text-sky-700 font-extrabold px-1 py-0.2 rounded border border-sky-200 uppercase">Cold Drink</span>';
                 }
 
+                const isHidden = item.isHidden === true;
+                const hideIconClass = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-slate-600';
+                const hideTitle = isHidden ? 'Unhide Product' : 'Hide Product';
+
+                const isAvailable = item.isAvailable !== false;
+                const availIconClass = isAvailable ? 'fa-circle-check text-emerald-600' : 'fa-circle-xmark text-rose-500';
+                const availTitle = isAvailable ? 'Mark Not Available' : 'Mark Available';
+
                 container.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-all">
-                        <td class="p-1.5 flex items-center gap-1.5 max-w-[150px]">
-                            <img src="${item.image}" class="w-7 h-7 rounded object-cover border border-slate-200 shrink-0" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
-                            <div class="min-w-0 flex-1">
-                                <div class="font-bold text-slate-900 text-[10.5px] truncate leading-tight" title="${item.name}">${item.name}</div>
-                                <div class="truncate">${categoryBadge}</div>
+                    <tr class="hover:bg-slate-50 transition-all text-center">
+                        <td class="p-2 align-middle">
+                            <div class="flex flex-col items-center justify-center">
+                                <img src="${item.image}" class="w-8 h-8 rounded-md object-cover border border-slate-200 mb-1" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
+                                <div class="font-bold text-slate-900 text-[10.5px] truncate max-w-[120px] leading-tight" title="${item.name}">${item.name}</div>
+                                <div class="mt-0.5">${categoryBadge}</div>
+                                <!-- Increased icon size and added a vertical line partition between them -->
+                                <div class="flex items-center justify-center gap-2.5 mt-1 text-sm">
+                                    <button onclick="toggleCatalogItemHide(${item.id})" class="hover:scale-110 transition-all" title="${hideTitle}">
+                                        <i class="fa-solid ${hideIconClass}"></i>
+                                    </button>
+                                    <span class="text-slate-300 font-normal">|</span>
+                                    <button onclick="toggleCatalogItemAvailability(${item.id})" class="hover:scale-110 transition-all" title="${availTitle}">
+                                        <i class="fa-solid ${availIconClass}"></i>
+                                    </button>
+                                </div>
                             </div>
                         </td>
-                        <td class="p-1.5 text-right font-black text-slate-850 text-[10.5px] whitespace-nowrap">Rs. ${item.price}</td>
-                        <td class="p-1.5 text-right space-x-0.5 whitespace-nowrap">
-                            <button onclick="moveCatalogItem(${item.id}, 'up')" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Move Up">
-                                <i class="fa-solid fa-arrow-up text-[8px]"></i>
-                            </button>
-                            <button onclick="moveCatalogItem(${item.id}, 'down')" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Move Down">
-                                <i class="fa-solid fa-arrow-down text-[8px]"></i>
-                            </button>
-                            <button onclick="loadFoodToEdit(${item.id})" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Edit Item">
-                                <i class="fa-solid fa-pencil text-[8px]"></i>
-                            </button>
-                            <button onclick="deleteFoodCatalog(${item.id})" class="w-5 h-5 inline-flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded transition-all font-bold" title="Delete Item">
-                                <i class="fa-solid fa-trash text-[8px]"></i>
-                            </button>
+                        <td class="p-2 align-middle font-black text-slate-850 text-[10.5px]">Rs. ${item.price}</td>
+                        <td class="p-2 align-middle">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="moveCatalogItem(${item.id}, 'up')" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Move Up">
+                                    <i class="fa-solid fa-arrow-up text-[8px]"></i>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="moveCatalogItem(${item.id}, 'down')" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Move Down">
+                                    <i class="fa-solid fa-arrow-down text-[8px]"></i>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="loadFoodToEdit(${item.id})" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Edit Item">
+                                    <i class="fa-solid fa-pencil text-[8px]"></i>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="deleteFoodCatalog(${item.id})" class="w-5 h-5 inline-flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 text-white rounded transition-all font-bold" title="Delete Item">
+                                    <i class="fa-solid fa-trash text-[8px]"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -3761,6 +3854,12 @@
 
             workingFeedPosts.forEach((post, index) => {
                 const totalComments = getTotalCommentsCount(post);
+                const isHidden = post.isHidden === true;
+                
+                // Updated logic: if auto shown (isHidden is false/falsy), icon is unselected (fa-eye) with word "Show". If hidden, icon is hidden (fa-eye-slash text-rose-500) with word "hide".
+                const hideShowText = isHidden ? 'Hide' : 'Show';
+                const hideShowIcon = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-slate-600';
+                const hideTitle = isHidden ? 'Show Post' : 'Hide Post';
 
                 container.innerHTML += `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
@@ -3786,20 +3885,28 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between pt-1.5 border-t border-slate-200">
-                            <button onclick="loadPostToEdit(${post.id})" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1">
-                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                        <!-- Active posts actions formatted with smaller icons, vertical partition lines and updated show/hide toggle logic -->
+                        <div class="flex items-center justify-between pt-1.5 border-t border-slate-200 text-[11px]">
+                            <button onclick="loadPostToEdit(${post.id})" class="hover:text-primary transition-all font-bold" title="Edit Post">
+                                <i class="fa-solid fa-pen-to-square text-[10px]"></i> Edit
                             </button>
-                            <div class="flex items-center gap-1">
-                                <button onclick="movePostItem(${post.id}, 'up')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1" title="Move Up">
-                                    <i class="fa-solid fa-arrow-up"></i>
+                            <span class="text-slate-300">|</span>
+                            <button onclick="togglePostHide(${post.id})" class="hover:text-primary transition-all font-bold" title="${hideTitle}">
+                                <i class="fa-solid ${hideShowIcon} text-[10px] mr-0.5"></i> ${hideShowText}
+                            </button>
+                            <span class="text-slate-300">|</span>
+                            <div class="flex items-center gap-1 font-bold">
+                                <button onclick="movePostItem(${post.id}, 'up')" class="hover:text-primary transition-all" title="Move Up">
+                                    <i class="fa-solid fa-arrow-up text-[10px]"></i>
                                 </button>
-                                <button onclick="movePostItem(${post.id}, 'down')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-705 rounded-md text-[10px] font-bold transition-all flex items-center gap-1" title="Move Down">
-                                    <i class="fa-solid fa-arrow-down"></i>
+                                <span class="text-slate-300">/</span>
+                                <button onclick="movePostItem(${post.id}, 'down')" class="hover:text-primary transition-all" title="Move Down">
+                                    <i class="fa-solid fa-arrow-down text-[10px]"></i>
                                 </button>
                             </div>
-                            <button onclick="deleteFeedPost(${post.id})" class="px-2 py-1 bg-red-50 hover:bg-red-500 text-red-655 hover:text-white border border-red-200 rounded-md text-[10px] font-bold transition-all flex items-center gap-1">
-                                <i class="fa-solid fa-trash-can"></i> Delete
+                            <span class="text-slate-300">|</span>
+                            <button onclick="deleteFeedPost(${post.id})" class="text-red-500 hover:text-red-700 transition-all font-bold" title="Delete Post">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -4012,7 +4119,6 @@
 
                 container.innerHTML += `
                     <div class="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1 shadow-sm text-[11px]">
-                        <!-- 1st Line: Username on left, Phone number on right without partition line, with center alignment -->
                         <div class="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-slate-100 gap-1">
                             <div class="flex items-center gap-1.5 truncate cursor-pointer hover:bg-slate-50 active:bg-slate-100 py-1 transition-colors flex-1 min-w-0" onclick="copyTextToClipboard('${safeName}', 'Name')" title="Click to copy name">
                                 <i class="fa-solid fa-user-circle text-[#FF5A36] text-[10px] shrink-0 self-center"></i>
@@ -4024,7 +4130,6 @@
                             </div>
                         </div>
 
-                        <!-- 2nd Line: Location on left, Registration icon with time & date on right. Center-aligned vertically -->
                         <div class="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-slate-100 gap-0">
                             <div class="flex items-center gap-1.5 truncate cursor-pointer hover:bg-slate-50 active:bg-slate-100 py-1 transition-colors w-[63%] min-w-0 pr-2 border-r border-slate-200" onclick="copyTextToClipboard('${safeLocation}', 'Location')" title="Click to copy location">
                                 <i class="fa-solid fa-location-dot text-rose-500 text-[10px] shrink-0 self-center"></i>
@@ -4039,7 +4144,6 @@
                             </div>
                         </div>
 
-                        <!-- 3rd Line: Email with red icon on left, copy & delete icons on right. Center-aligned vertically -->
                         <div class="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-slate-100 gap-1">
                             <div class="flex items-center gap-1.5 truncate cursor-pointer hover:bg-slate-50 active:bg-slate-100 py-1 transition-colors flex-1 min-w-0 pr-1" onclick="copyTextToClipboard('${safeEmail}', 'Email')" title="Click to copy email">
                                 <i class="fa-solid fa-envelope text-red-500 text-[10px] shrink-0 self-center"></i>
@@ -4086,7 +4190,6 @@
             textarea.style.outline = 'none';
             textarea.style.boxShadow = 'none';
             textarea.style.background = 'transparent';
-            // Prevent mobile virtual keyboard from popping up on mobile click
             textarea.setAttribute('readonly', '');
             textarea.style.opacity = '0';
             document.body.appendChild(textarea);
@@ -4194,12 +4297,12 @@
             if (editId) {
                 const index = menuData.findIndex(x => x.id == editId);
                 if (index !== -1) {
-                    menuData[index] = { id: parseInt(editId), name, price, image, desc, category, variants };
+                    menuData[index] = { ...menuData[index], id: parseInt(editId), name, price, image, desc, category, variants };
                     showNotification('Changes saved successfully!');
                 }
             } else {
                 const newId = menuData.length > 0 ? Math.max(...menuData.map(x => x.id)) + 1 : 1;
-                menuData.push({ id: newId, name, price, image, desc, category, variants });
+                menuData.push({ id: newId, name, price, image, desc, category, variants, isHidden: false, isAvailable: true });
                 showNotification('Product successfully added to the catalog!');
             }
 
