@@ -4420,6 +4420,9 @@
 
 <script>
     (function() {
+        // Detect if user is on a mobile device to optimize performance
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         // INSTANT MEMORY HYDRATION
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
@@ -4431,10 +4434,7 @@
                     menuData.length = 0;
                     menuData.push(...parsedMenu);
                     workingMenuData = JSON.parse(JSON.stringify(menuData));
-                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                    triggerMenuRenders();
                 }
             }
 
@@ -4444,8 +4444,7 @@
                     feedPosts.length = 0;
                     feedPosts.push(...parsedPosts);
                     workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                    triggerPostRenders();
                 }
             }
         } catch(e) {
@@ -4465,20 +4464,38 @@
 
         if (typeof firebase === 'undefined') return;
 
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         
         const db = firebase.firestore();
 
+        // THROTTLED / DEBOUNCED RENDER HELPERS TO PREVENT MOBILE FREEZING
+        let menuRenderTimer = null;
+        function triggerMenuRenders() {
+            clearTimeout(menuRenderTimer);
+            menuRenderTimer = setTimeout(() => {
+                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+            }, isMobile ? 150 : 50); // Slightly higher delay on mobile for smooth UI thread
+        }
+
+        let postRenderTimer = null;
+        function triggerPostRenders() {
+            clearTimeout(postRenderTimer);
+            postRenderTimer = setTimeout(() => {
+                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+            }, isMobile ? 150 : 50);
+        }
+
         // FAST REAL-TIME BACKGROUND FIRESTORE LISTENERS
 
         // 1. Sync Food Menu Catalog
         db.collection("menu").onSnapshot(
-            { includeMetadataChanges: false },
             (snapshot) => {
-                // Ignore local cache metadata changes if they originate from our own writes to speed up UI
                 const items = [];
                 snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
                 
@@ -4492,11 +4509,7 @@
                     try { localStorage.removeItem('acp_cached_menu'); } catch(e){}
                 }
                 workingMenuData = JSON.parse(JSON.stringify(menuData));
-
-                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                triggerMenuRenders();
             },
             (error) => { console.error("❌ Firestore Menu Error:", error.message); }
         );
@@ -4520,9 +4533,7 @@
                     try { localStorage.removeItem('acp_cached_posts'); } catch(e){}
                 }
                 workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-
-                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                triggerPostRenders();
             },
             (error) => { console.error("❌ Firestore Posts Error:", error.message); }
         );
@@ -4602,7 +4613,7 @@
             db.collection("users").doc(cleanId).delete();
         };
 
-        // FRONTEND ACTION HOOKS (OPTIMIZED WITH BATCHING)
+        // FRONTEND ACTION HOOKS (MOBILE OPTIMIZED)
 
         const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
         window.handleFoodFormSubmit = function(event) {
@@ -4617,7 +4628,6 @@
             }
         };
 
-        // OPTIMIZED: Using Firestore Batch Write to avoid lag when saving multiple orders
         const orig_saveCatalogOrderChanges = window.saveCatalogOrderChanges;
         window.saveCatalogOrderChanges = function() {
             if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
@@ -4665,7 +4675,6 @@
             }
         };
 
-        // OPTIMIZED: Batch write for posts order
         const orig_savePostOrderChanges = window.savePostOrderChanges;
         window.savePostOrderChanges = function() {
             if (orig_savePostOrderChanges) orig_savePostOrderChanges();
@@ -4693,14 +4702,13 @@
             window.dbDeletePost(postId);
         };
 
-        // Helper to debounce rapid clicks (like rapid liking/commenting)
         let actionTimeouts = {};
         function debouncedDbSavePost(post) {
             if (!post || !post.id) return;
             clearTimeout(actionTimeouts[post.id]);
             actionTimeouts[post.id] = setTimeout(() => {
                 window.dbSavePost(post);
-            }, 300); // Wait 300ms of inactivity before sending to firestore to prevent stuttering
+            }, 400); // 400ms delay for mobile touch stability
         }
 
         const orig_submitComment = window.submitComment;
@@ -4776,7 +4784,7 @@
             if (post) debouncedDbSavePost(post);
         };
 
-        const orig_saveEditReply = window.saveEditReply;
+        const orig_saveEditReply = window.saveEditComment;
         window.saveEditReply = function(postId, commentIndex, replyIndex) {
             if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
