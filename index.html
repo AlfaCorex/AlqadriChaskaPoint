@@ -846,18 +846,18 @@
 
         </main>
 
-        <!-- FLOATING STICKY ORDER BAR -->
-        <div id="floatingCartBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[440px] z-[9990] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-3 rounded-2xl shadow-2xl transition-all duration-300 translate-y-24 opacity-0 pointer-events-none no-print">
-            <div class="flex items-center justify-between gap-2">
-                <div class="flex flex-col pl-1 cursor-pointer" onclick="document.getElementById('order-section').scrollIntoView({behavior: 'smooth'})">
-                    <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider"><span id="floatingCartCount">0</span> Items</span>
-                    <span id="floatingCartTotal" class="text-sm font-black text-amber-400">Rs. 0</span>
+        <!-- FLOATING STICKY ORDER BAR (Price and text locked strictly to single line) -->
+        <div id="floatingCartBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[440px] z-[9990] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-2.5 sm:p-3 rounded-2xl shadow-2xl transition-all duration-300 translate-y-24 opacity-0 pointer-events-none no-print">
+            <div class="flex items-center justify-between gap-1.5 sm:gap-2">
+                <div class="flex flex-col pl-1 cursor-pointer shrink-0 min-w-fit whitespace-nowrap" onclick="document.getElementById('order-section').scrollIntoView({behavior: 'smooth'})">
+                    <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider whitespace-nowrap"><span id="floatingCartCount">0</span> Items</span>
+                    <span id="floatingCartTotal" class="text-xs sm:text-sm font-black text-amber-400 whitespace-nowrap">Rs. 0</span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <button onclick="openCheckoutConfirmModal()" class="btn-action-effect bg-[#FF5A36] hover:bg-[#E04825] text-white py-2 px-3 rounded-xl font-bold text-xs shadow-md flex items-center gap-1 transition-all active:scale-95" title="Place Order">
+                <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                    <button onclick="openCheckoutConfirmModal()" class="btn-action-effect bg-[#FF5A36] hover:bg-[#E04825] text-white py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs shadow-md flex items-center gap-1 transition-all active:scale-95 whitespace-nowrap" title="Place Order">
                         <i class="fa-solid fa-circle-check text-xs"></i> Place Order
                     </button>
-                    <button onclick="generateStoreInvoice()" class="btn-action-effect bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 py-2 px-2.5 rounded-xl font-bold text-xs shadow-md flex items-center gap-1 transition-all active:scale-95" title="View Receipt">
+                    <button onclick="generateStoreInvoice()" class="btn-action-effect bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 py-2 px-2 sm:px-2.5 rounded-xl font-bold text-xs shadow-md flex items-center gap-1 transition-all active:scale-95 whitespace-nowrap" title="View Receipt">
                         <i class="fa-solid fa-receipt text-xs"></i> Receipt
                     </button>
                     <button onclick="clearCart()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 p-2 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center shrink-0" title="Cancel Selection">
@@ -874,7 +874,7 @@
 
     </div>
 
-    <!-- PRODUCT NOT AVAILABLE POPUP MODAL (Updated format per requirements) -->
+    <!-- PRODUCT NOT AVAILABLE POPUP MODAL -->
     <div id="productNotAvailableModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10006] hidden flex items-center justify-center p-4" onclick="closeProductNotAvailableModal()">
         <div class="bg-white rounded-[24px] max-w-xs w-full p-6 border border-slate-200 relative shadow-2xl space-y-4 text-center" onclick="event.stopPropagation()">
             <button onclick="closeProductNotAvailableModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -895,7 +895,7 @@
         </div>
     </div>
 
-    <!-- COLD DRINK VARIANT MODAL SELECTOR (Multi-Quantity per Option starting at 0) -->
+    <!-- COLD DRINK VARIANT MODAL SELECTOR -->
     <div id="drinkVariantModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10005] hidden flex items-center justify-center p-4" onclick="closeDrinkVariantModal()">
         <div class="bg-white rounded-[24px] max-w-xs w-full p-5 border border-slate-200 relative shadow-2xl space-y-4 text-center" onclick="event.stopPropagation()">
             <button onclick="closeDrinkVariantModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -924,7 +924,7 @@
         </div>
     </div>
 
-    <!-- ORDER CONFIRMATION CHECKOUT POP-UP MODAL (Theme Colored) -->
+    <!-- ORDER CONFIRMATION CHECKOUT POP-UP MODAL -->
     <div id="checkoutConfirmModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10000] hidden flex items-center justify-center p-4" onclick="closeCheckoutConfirmModal()">
         <div class="bg-white rounded-[24px] max-w-sm w-full p-5 border border-slate-200 relative shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-center" onclick="event.stopPropagation()">
             <button onclick="closeCheckoutConfirmModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -979,7 +979,7 @@
         </div>
     </div>
 
-    <!-- User Account Modal (Supports Sign In & First-Time Registration) -->
+    <!-- User Account Modal -->
     <div id="userAuthModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10000] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-[24px] max-w-xs w-full p-6 border border-slate-200 relative shadow-2xl">
             <button onclick="closeUserModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -1055,7 +1055,7 @@
         </div>
     </div>
 
-    <!-- POP-UP MODAL: Guest Comment Name Input & Instructions -->
+    <!-- POP-UP MODAL: Guest Comment Name Input -->
     <div id="guestNameModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[10000] hidden flex items-center justify-center p-4" onclick="closeGuestNameModal()">
         <div class="bg-white rounded-[24px] max-w-xs w-full p-6 border border-slate-200 relative shadow-2xl text-center space-y-3" onclick="event.stopPropagation()">
             <div class="w-12 h-12 bg-orange-100 text-[#FF5A36] rounded-full flex items-center justify-center text-xl mx-auto shadow-inner">
@@ -1096,7 +1096,7 @@
             </div>
             
             <div id="adminCommentsListContainer" class="space-y-3 overflow-y-auto flex-grow pr-1">
-                <!-- Dynamic comments tree with delete capability -->
+                <!-- Dynamic comments tree -->
             </div>
         </div>
     </div>
@@ -1603,6 +1603,26 @@
 
         let pendingDrinkItem = null;
         let variantQuantities = {}; 
+
+        // HELPER: Always sort selected cart items strictly by category hierarchy (Fast Food -> Local Items -> Cold Drinks)
+        function getSortedCartKeys() {
+            const catWeights = { 'fast': 1, 'local': 2, 'drinks': 3 };
+            return Object.keys(cartItems).sort((a, b) => {
+                const idA = a.includes('_') ? a.split('_')[0] : a;
+                const idB = b.includes('_') ? b.split('_')[0] : b;
+                const itemA = menuData.find(x => x.id == idA);
+                const itemB = menuData.find(x => x.id == idB);
+                if (!itemA || !itemB) return 0;
+
+                const weightA = catWeights[itemA.category] || 99;
+                const weightB = catWeights[itemB.category] || 99;
+
+                if (weightA !== weightB) {
+                    return weightA - weightB;
+                }
+                return menuData.indexOf(itemA) - menuData.indexOf(itemB);
+            });
+        }
 
         function toggleCommentDropdown(dropdownId, event) {
             if (event) event.stopPropagation();
@@ -2975,7 +2995,7 @@
         }
 
         function openCheckoutConfirmModal() {
-            const keys = Object.keys(cartItems);
+            const keys = getSortedCartKeys();
             if (keys.length === 0) {
                 showNotification('Your basket is empty!', 'warning');
                 return;
@@ -3027,7 +3047,7 @@
         }
 
         function finalizeOrderAndSendWhatsApp() {
-            const keys = Object.keys(cartItems);
+            const keys = getSortedCartKeys();
             if (keys.length === 0) return;
 
             const name = document.getElementById('checkoutName').value.trim();
@@ -3143,7 +3163,7 @@
             const floatingCartCount = document.getElementById('floatingCartCount');
             const floatingCartTotal = document.getElementById('floatingCartTotal');
             
-            const keys = Object.keys(cartItems);
+            const keys = getSortedCartKeys();
             
             let totalItemsCount = 0;
             keys.forEach(k => {
@@ -3797,7 +3817,6 @@
                                 <img src="${item.image}" class="w-8 h-8 rounded-md object-cover border border-slate-200 mb-1" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
                                 <div class="font-bold text-slate-900 text-[10.5px] truncate max-w-[120px] leading-tight" title="${item.name}">${item.name}</div>
                                 <div class="mt-0.5">${categoryBadge}</div>
-                                <!-- Increased icon size and added a vertical line partition between them -->
                                 <div class="flex items-center justify-center gap-2.5 mt-1 text-sm">
                                     <button onclick="toggleCatalogItemHide(${item.id})" class="hover:scale-110 transition-all" title="${hideTitle}">
                                         <i class="fa-solid ${hideIconClass}"></i>
@@ -3856,7 +3875,6 @@
                 const totalComments = getTotalCommentsCount(post);
                 const isHidden = post.isHidden === true;
                 
-                // Updated logic: if auto shown (isHidden is false/falsy), icon is unselected (fa-eye) with word "Show". If hidden, icon is hidden (fa-eye-slash text-rose-500) with word "hide".
                 const hideShowText = isHidden ? 'Hide' : 'Show';
                 const hideShowIcon = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-slate-600';
                 const hideTitle = isHidden ? 'Show Post' : 'Hide Post';
@@ -3885,7 +3903,6 @@
                             </div>
                         </div>
 
-                        <!-- Active posts actions formatted with smaller icons, vertical partition lines and updated show/hide toggle logic -->
                         <div class="flex items-center justify-between pt-1.5 border-t border-slate-200 text-[11px]">
                             <button onclick="loadPostToEdit(${post.id})" class="hover:text-primary transition-all font-bold" title="Edit Post">
                                 <i class="fa-solid fa-pen-to-square text-[10px]"></i> Edit
@@ -4327,7 +4344,7 @@
         function generateStoreInvoice() {
             const modalOverlay = document.getElementById('invoiceModalOverlay');
             const invoiceTableBody = document.getElementById('invoiceTableRows');
-            const keys = Object.keys(cartItems);
+            const keys = getSortedCartKeys();
 
             if (keys.length === 0) return;
 
@@ -4437,7 +4454,6 @@
     }
     const db = firebase.firestore();
 
-    // Check if current user is Admin (to avoid running heavy admin sync on customer phones)
     const isAdminScreen = () => {
         return !!(document.getElementById('adminPanel') || 
                   document.getElementById('adminCatalog') || 
@@ -4445,22 +4461,54 @@
                   window.location.hash.includes('admin'));
     };
 
-    // 2. INSTANT ZERO-DELAY LOCAL HYDRATION
+    // 2. BACKGROUND IMAGE PRELOADER (Images load instantly like hardcoded assets)
+    function preloadMenuImages(items) {
+        if (!Array.isArray(items)) return;
+        // Preload in idle time to avoid CPU load
+        const scheduleTask = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+        scheduleTask(() => {
+            items.forEach(item => {
+                if (item.image && item.image.startsWith('http')) {
+                    const img = new Image();
+                    img.src = item.image;
+                }
+            });
+        });
+    }
+
+    // 3. ZERO-DELAY IMMEDIATE MEMORY INJECTION (Instant Hardcoded Feel)
     try {
         const cachedMenu = localStorage.getItem('acp_cached_menu');
+        const cachedPosts = localStorage.getItem('acp_cached_posts');
+
         if (cachedMenu && typeof menuData !== 'undefined' && menuData.length === 0) {
-            const parsed = JSON.parse(cachedMenu);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                menuData.push(...parsed);
+            const parsedMenu = JSON.parse(cachedMenu);
+            if (Array.isArray(parsedMenu) && parsedMenu.length > 0) {
+                menuData.push(...parsedMenu);
                 if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
-                // Render immediately from cache
+                
+                // Fast UI initial render
                 if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                
+                preloadMenuImages(parsedMenu);
+            }
+        }
+
+        if (cachedPosts && typeof feedPosts !== 'undefined' && feedPosts.length === 0) {
+            const parsedPosts = JSON.parse(cachedPosts);
+            if (Array.isArray(parsedPosts) && parsedPosts.length > 0) {
+                feedPosts.push(...parsedPosts);
+                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
             }
         }
     } catch(e) {}
 
-    // 3. SMART DEBOUNCED RENDER (Prevents Mobile Freezing on touch)
-    let isMenuLoadedOnce = false;
+    // 4. NON-BLOCKING UI RENDER HELPERS
+    let isMenuLoadedOnce = (typeof menuData !== 'undefined' && menuData.length > 0);
+    
     function safeRenderMenu() {
         requestAnimationFrame(() => {
             if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
@@ -4477,7 +4525,7 @@
         });
     }
 
-    // 4. MENU REAL-TIME SYNC (Lightweight & Non-intrusive)
+    // 5. LIGHTWEIGHT BACKGROUND FIRESTORE SYNC (No interaction freezing)
     db.collection("menu").onSnapshot(
         { includeMetadataChanges: false },
         (snapshot) => {
@@ -4485,10 +4533,10 @@
             snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
             items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
 
-            // Compare data to avoid unnecessary re-rendering while customer is touching the screen
             const newJson = JSON.stringify(items);
             const oldJson = localStorage.getItem('acp_cached_menu');
 
+            // Only re-render if data has genuinely changed
             if (newJson !== oldJson || !isMenuLoadedOnce) {
                 menuData.length = 0;
                 menuData.push(...items);
@@ -4496,17 +4544,17 @@
                 
                 safeRenderMenu();
                 isMenuLoadedOnce = true;
+                preloadMenuImages(items);
 
-                // Save cache in background without blocking UI
+                // Asynchronous cache update without touching main thread
                 setTimeout(() => {
                     try { localStorage.setItem('acp_cached_menu', newJson); } catch(e){}
-                }, 100);
+                }, 150);
             }
         },
         (error) => { console.error("Menu Sync Error:", error); }
     );
 
-    // 5. POSTS REAL-TIME SYNC
     db.collection("posts").onSnapshot(
         { includeMetadataChanges: false },
         (snapshot) => {
@@ -4517,16 +4565,25 @@
                 return (b.timestamp || 0) - (a.timestamp || 0);
             });
 
-            feedPosts.length = 0;
-            feedPosts.push(...posts);
-            if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+            const newJson = JSON.stringify(posts);
+            const oldJson = localStorage.getItem('acp_cached_posts');
 
-            safeRenderPosts();
+            if (newJson !== oldJson) {
+                feedPosts.length = 0;
+                feedPosts.push(...posts);
+                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+
+                safeRenderPosts();
+
+                setTimeout(() => {
+                    try { localStorage.setItem('acp_cached_posts', newJson); } catch(e){}
+                }, 150);
+            }
         },
         (error) => { console.error("Posts Sync Error:", error); }
     );
 
-    // 6. ORDERS & USERS SYNC (Runs ONLY if Admin panel is open - Saves customer mobile CPU & Battery)
+    // 6. ADMIN-ONLY LISTENERS (Customer phones never download orders/users)
     if (isAdminScreen()) {
         db.collection("orders").onSnapshot((snapshot) => {
             const orders = [];
@@ -4550,11 +4607,10 @@
         });
     }
 
-    // 7. ASYNC FIRE-AND-FORGET DB HELPERS (Customer UI Never Pauses)
+    // 7. ULTRA-FAST ASYNC DB OPERATIONS (Zero Latency for Client)
     window.dbSaveOrder = function(order) {
         if (!order || !order.id) return;
         const cleanId = order.id.toString().replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-        // Run in background microtask
         Promise.resolve().then(() => {
             db.collection("orders").doc(cleanId).set(order, { merge: true }).catch(console.error);
         });
@@ -4601,7 +4657,7 @@
         db.collection("users").doc(cleanId).delete().catch(console.error);
     };
 
-    // 8. ACTION HOOKS (Instant Client-Side Execution)
+    // 8. FRONTEND ACTION HOOKS
     const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
     window.finalizeOrderAndSendWhatsApp = function() {
         if (orig_finalizeOrder) orig_finalizeOrder();
