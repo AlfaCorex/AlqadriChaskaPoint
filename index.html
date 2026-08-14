@@ -4420,9 +4420,6 @@
 
 <script>
     (function() {
-        // Detect if user is on a mobile device to optimize performance
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
         // INSTANT MEMORY HYDRATION
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
@@ -4434,7 +4431,10 @@
                     menuData.length = 0;
                     menuData.push(...parsedMenu);
                     workingMenuData = JSON.parse(JSON.stringify(menuData));
-                    triggerMenuRenders();
+                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
                 }
             }
 
@@ -4444,7 +4444,8 @@
                     feedPosts.length = 0;
                     feedPosts.push(...parsedPosts);
                     workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-                    triggerPostRenders();
+                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
                 }
             }
         } catch(e) {
@@ -4464,32 +4465,12 @@
 
         if (typeof firebase === 'undefined') return;
 
+        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         
         const db = firebase.firestore();
-
-        // THROTTLED / DEBOUNCED RENDER HELPERS TO PREVENT MOBILE FREEZING
-        let menuRenderTimer = null;
-        function triggerMenuRenders() {
-            clearTimeout(menuRenderTimer);
-            menuRenderTimer = setTimeout(() => {
-                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
-            }, isMobile ? 150 : 50); // Slightly higher delay on mobile for smooth UI thread
-        }
-
-        let postRenderTimer = null;
-        function triggerPostRenders() {
-            clearTimeout(postRenderTimer);
-            postRenderTimer = setTimeout(() => {
-                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-            }, isMobile ? 150 : 50);
-        }
 
         // FAST REAL-TIME BACKGROUND FIRESTORE LISTENERS
 
@@ -4499,7 +4480,12 @@
                 const items = [];
                 snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
                 
-                items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
+                items.sort((a, b) => {
+                    if (a.order !== undefined && b.order !== undefined) {
+                        return a.order - b.order;
+                    }
+                    return 0;
+                });
 
                 menuData.length = 0;
                 if (items.length > 0) {
@@ -4509,7 +4495,12 @@
                     try { localStorage.removeItem('acp_cached_menu'); } catch(e){}
                 }
                 workingMenuData = JSON.parse(JSON.stringify(menuData));
-                triggerMenuRenders();
+
+                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                console.log("⚡ Live Menu Synced:", items.length, "items");
             },
             (error) => { console.error("❌ Firestore Menu Error:", error.message); }
         );
@@ -4521,7 +4512,9 @@
                 snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
                 
                 posts.sort((a, b) => {
-                    if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                    if (a.order !== undefined && b.order !== undefined) {
+                        return a.order - b.order;
+                    }
                     return (b.timestamp || 0) - (a.timestamp || 0);
                 });
 
@@ -4533,7 +4526,10 @@
                     try { localStorage.removeItem('acp_cached_posts'); } catch(e){}
                 }
                 workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-                triggerPostRenders();
+
+                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                console.log("⚡ Live Posts Synced:", posts.length, "posts");
             },
             (error) => { console.error("❌ Firestore Posts Error:", error.message); }
         );
@@ -4545,9 +4541,12 @@
                 snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
                 
                 ordersList.length = 0;
-                if (orders.length > 0) ordersList.push(...orders);
+                if (orders.length > 0) {
+                    ordersList.push(...orders);
+                }
 
                 if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
+                console.log("⚡ Live Orders Synced:", orders.length, "orders");
             },
             (error) => { console.error("❌ Firestore Orders Error:", error.message); }
         );
@@ -4557,12 +4556,16 @@
             (snapshot) => {
                 const users = [];
                 snapshot.forEach((doc) => { users.push({ ...doc.data() }); });
+
                 users.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
                 registeredUsers.length = 0;
-                if (users.length > 0) registeredUsers.push(...users);
+                if (users.length > 0) {
+                    registeredUsers.push(...users);
+                }
 
                 if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
+                console.log("⚡ Live Users Synced:", users.length, "users");
             },
             (error) => { console.error("❌ Firestore Users Error:", error.message); }
         );
@@ -4613,7 +4616,7 @@
             db.collection("users").doc(cleanId).delete();
         };
 
-        // FRONTEND ACTION HOOKS (MOBILE OPTIMIZED)
+        // FRONTEND ACTION HOOKS FOR IMMEDIATE REAL-TIME FIRESTORE SYNC
 
         const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
         window.handleFoodFormSubmit = function(event) {
@@ -4632,16 +4635,14 @@
         window.saveCatalogOrderChanges = function() {
             if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
             if (menuData && menuData.length > 0) {
-                const batch = db.batch();
                 menuData.forEach((item, idx) => {
                     item.order = idx;
-                    const docRef = db.collection("menu").doc(item.id.toString());
-                    batch.set(docRef, item, { merge: true });
+                    window.dbSaveFoodItem(item);
                 });
-                batch.commit().catch(err => console.error("Batch save error:", err));
             }
         };
 
+        // Catalog Item Hide/Unhide Sync Hook
         const orig_toggleCatalogItemHide = window.toggleCatalogItemHide;
         window.toggleCatalogItemHide = function(id) {
             if (orig_toggleCatalogItemHide) orig_toggleCatalogItemHide(id);
@@ -4649,6 +4650,7 @@
             if (item) window.dbSaveFoodItem(item);
         };
 
+        // Catalog Item Available/Unavailable Sync Hook
         const orig_toggleCatalogItemAvailability = window.toggleCatalogItemAvailability;
         window.toggleCatalogItemAvailability = function(id) {
             if (orig_toggleCatalogItemAvailability) orig_toggleCatalogItemAvailability(id);
@@ -4679,16 +4681,14 @@
         window.savePostOrderChanges = function() {
             if (orig_savePostOrderChanges) orig_savePostOrderChanges();
             if (feedPosts && feedPosts.length > 0) {
-                const batch = db.batch();
                 feedPosts.forEach((post, idx) => {
                     post.order = idx;
-                    const docRef = db.collection("posts").doc(post.id.toString());
-                    batch.set(docRef, post, { merge: true });
+                    window.dbSavePost(post);
                 });
-                batch.commit().catch(err => console.error("Batch post order error:", err));
             }
         };
 
+        // Feed Post Hide/Show Sync Hook
         const orig_togglePostHide = window.togglePostHide;
         window.togglePostHide = function(id) {
             if (orig_togglePostHide) orig_togglePostHide(id);
@@ -4702,20 +4702,11 @@
             window.dbDeletePost(postId);
         };
 
-        let actionTimeouts = {};
-        function debouncedDbSavePost(post) {
-            if (!post || !post.id) return;
-            clearTimeout(actionTimeouts[post.id]);
-            actionTimeouts[post.id] = setTimeout(() => {
-                window.dbSavePost(post);
-            }, 400); // 400ms delay for mobile touch stability
-        }
-
         const orig_submitComment = window.submitComment;
         window.submitComment = function(id) {
             if (orig_submitComment) orig_submitComment(id);
             const post = feedPosts.find(p => p.id === id);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_submitUserReply = window.submitUserReply;
@@ -4724,7 +4715,7 @@
             if (orig_submitUserReply) orig_submitUserReply();
             if (postId) {
                 const post = feedPosts.find(p => p.id === postId);
-                if (post) debouncedDbSavePost(post);
+                if (post) window.dbSavePost(post);
             }
         };
 
@@ -4732,63 +4723,63 @@
         window.likePost = function(id) {
             if (orig_likePost) orig_likePost(id);
             const post = feedPosts.find(p => p.id === id);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_likeComment = window.likeComment;
         window.likeComment = function(postId, commentIndex) {
             if (orig_likeComment) orig_likeComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_dislikeComment = window.dislikeComment;
         window.dislikeComment = function(postId, commentIndex) {
             if (orig_dislikeComment) orig_dislikeComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_likeReply = window.likeReply;
         window.likeReply = function(postId, commentIndex, replyIndex) {
             if (orig_likeReply) orig_likeReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_dislikeReply = window.dislikeReply;
         window.dislikeReply = function(postId, commentIndex, replyIndex) {
             if (orig_dislikeReply) orig_dislikeReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_deleteComment = window.deleteComment;
         window.deleteComment = function(postId, commentIndex) {
             if (orig_deleteComment) orig_deleteComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_deleteReply = window.deleteReply;
         window.deleteReply = function(postId, commentIndex, replyIndex) {
             if (orig_deleteReply) orig_deleteReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_saveEditComment = window.saveEditComment;
         window.saveEditComment = function(postId, commentIndex) {
             if (orig_saveEditComment) orig_saveEditComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
-        const orig_saveEditReply = window.saveEditComment;
+        const orig_saveEditReply = window.saveEditReply;
         window.saveEditReply = function(postId, commentIndex, replyIndex) {
             if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) debouncedDbSavePost(post);
+            if (post) window.dbSavePost(post);
         };
 
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
