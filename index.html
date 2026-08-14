@@ -905,7 +905,7 @@
                 <div class="text-xs font-black text-slate-800">Dear User Sorry..!</div>
                 <hr class="border-t border-slate-200 my-1">
                 <div class="text-xs font-black text-primary" id="unavailableItemNameTitle">Product Name</div>
-                <p class="text-xs text-rose-600 font-extrabold pt-1">Aap ki select ki gai product is waqt available nahin hy</p>
+                <p class="text-xs text-rose-600 font-extrabold pt-1">Aap ki taraf se select ki gai product is waqt hmary han available nahin hai</p>
             </div>
             <button onclick="closeProductNotAvailableModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition-all shadow-md">
                 Got it
@@ -1931,7 +1931,7 @@
                     : 'border border-slate-200 bg-white';
 
                 const checkBadge = isSelected 
-                    ? `<div class="absolute top-1.5 right-1.5 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
+                    ? `<div class="acp-badge-indicator absolute top-1.5 right-1.5 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
                     : '';
 
                 container.innerHTML += `
@@ -1975,7 +1975,7 @@
                     : 'border border-slate-200 bg-white';
 
                 const checkBadge = isSelected 
-                    ? `<div class="absolute top-1 right-1 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
+                    ? `<div class="acp-badge-indicator absolute top-1 right-1 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
                     : '';
 
                 container.innerHTML += `
@@ -2023,7 +2023,7 @@
                     : 'border border-slate-200 bg-white';
 
                 const checkBadge = isSelected 
-                    ? `<div class="absolute top-1 right-1 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
+                    ? `<div class="acp-badge-indicator absolute top-1 right-1 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
                     : '';
 
                 container.innerHTML += `
@@ -2161,8 +2161,9 @@
                 return;
             }
 
+            const currentItemId = pendingDrinkItem.id;
             closeDrinkVariantModal();
-            updateSpecificCartItemUI(pendingDrinkItem.id);
+            updateSpecificCartItemUI(currentItemId);
             renderCartSummary();
             showNotification(`Drink variants added to basket!`);
         }
@@ -2740,7 +2741,7 @@
                                 <span>${totalCommentsCount}</span>
                             </button>
                             
-                            <button onclick="downloadPostMedia('${post.image}', '${post.title.replace(/'/g, "\\\\'")}')" class="btn-action-effect flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-[#FF5A36] transition-all p-1 rounded" title="Download Image">
+                            <button onclick="downloadPostMedia('${post.image}', '${post.title.replace(/'/g, "\\\\'")}');" class="btn-action-effect flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-[#FF5A36] transition-all p-1 rounded" title="Download Image">
                                 <i class="fa-solid fa-download text-sm"></i>
                                 <span>Download</span>
                             </button>
@@ -3193,7 +3194,7 @@
             }
         }
 
-        // 2- Ultra-Fast Direct DOM selective update function: ZERO LAG ON (+) & (-) CLICKS
+        // FIXED: Universal Update UI function supporting direct and variant items perfectly
         function updateSpecificCartItemUI(key) {
             const keyStr = String(key);
             let itemId = keyStr.includes('_') ? keyStr.split('_')[0] : keyStr;
@@ -3201,18 +3202,14 @@
             if (!item) return;
 
             let currentQty = 0;
-            if (item.category === 'drinks' && keyStr.includes('_')) {
-                currentQty = cartItems[keyStr] || 0;
+            if (item.category === 'drinks') {
+                Object.keys(cartItems).forEach(k => {
+                    if (k == item.id || k.startsWith(item.id + '_')) {
+                        currentQty += cartItems[k];
+                    }
+                });
             } else {
-                if (item.category === 'drinks') {
-                    Object.keys(cartItems).forEach(k => {
-                        if (k == item.id || k.startsWith(item.id + '_')) {
-                            currentQty += cartItems[k];
-                        }
-                    });
-                } else {
-                    currentQty = cartItems[item.id] || 0;
-                }
+                currentQty = cartItems[item.id] || 0;
             }
 
             if (item.category === 'fast') {
@@ -3284,7 +3281,6 @@
                 cartItems[id] = newQty;
             }
 
-            // Zero-Lag Direct Updates
             updateSpecificCartItemUI(id);
             renderCartSummary();
         }
@@ -4588,6 +4584,8 @@
             });
         }
     </script>
+</body>
+</html>
 <!-- Firebase SDK Libraries (10.12.0 UMD) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -5013,5 +5011,3 @@
         };
     })();
 </script>
-</body>
-</html>
