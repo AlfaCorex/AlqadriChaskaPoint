@@ -4420,7 +4420,10 @@
 
 <script>
     (function() {
-        // INSTANT MEMORY HYDRATION
+        // Detect mobile for rendering optimization
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // 1. INSTANT ZERO-DELAY MEMORY HYDRATION (Local-First)
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
             const cachedPosts = localStorage.getItem('acp_cached_posts');
@@ -4430,11 +4433,8 @@
                 if (Array.isArray(parsedMenu) && parsedMenu.length > 0) {
                     menuData.length = 0;
                     menuData.push(...parsedMenu);
-                    workingMenuData = JSON.parse(JSON.stringify(menuData));
-                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                    workingMenuData = [...menuData];
+                    triggerMenuRenders();
                 }
             }
 
@@ -4443,9 +4443,8 @@
                 if (Array.isArray(parsedPosts) && parsedPosts.length > 0) {
                     feedPosts.length = 0;
                     feedPosts.push(...parsedPosts);
-                    workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                    workingFeedPosts = [...feedPosts];
+                    triggerPostRenders();
                 }
             }
         } catch(e) {
@@ -4465,27 +4464,54 @@
 
         if (typeof firebase === 'undefined') return;
 
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         
         const db = firebase.firestore();
 
-        // FAST REAL-TIME BACKGROUND FIRESTORE LISTENERS
+        // 2. ENABLE OFFLINE PERSISTENCE (Instant background syncing with zero UI lag)
+        db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn('Persistence failed: Multiple tabs open');
+            } else if (err.code === 'unimplemented') {
+                console.warn('Persistence not supported by this browser');
+            }
+        });
 
-        // 1. Sync Food Menu Catalog
+        // 3. SMOOTH UI RENDERING (requestAnimationFrame eliminates stuttering)
+        let menuRenderTimer = null;
+        function triggerMenuRenders() {
+            clearTimeout(menuRenderTimer);
+            menuRenderTimer = setTimeout(() => {
+                requestAnimationFrame(() => {
+                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                });
+            }, isMobile ? 80 : 30);
+        }
+
+        let postRenderTimer = null;
+        function triggerPostRenders() {
+            clearTimeout(postRenderTimer);
+            postRenderTimer = setTimeout(() => {
+                requestAnimationFrame(() => {
+                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                });
+            }, isMobile ? 80 : 30);
+        }
+
+        // 4. REAL-TIME BACKGROUND FIRESTORE LISTENERS
         db.collection("menu").onSnapshot(
+            { includeMetadataChanges: false },
             (snapshot) => {
                 const items = [];
                 snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
                 
-                items.sort((a, b) => {
-                    if (a.order !== undefined && b.order !== undefined) {
-                        return a.order - b.order;
-                    }
-                    return 0;
-                });
+                items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
 
                 menuData.length = 0;
                 if (items.length > 0) {
@@ -4494,27 +4520,20 @@
                 } else {
                     try { localStorage.removeItem('acp_cached_menu'); } catch(e){}
                 }
-                workingMenuData = JSON.parse(JSON.stringify(menuData));
-
-                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
-                console.log("⚡ Live Menu Synced:", items.length, "items");
+                workingMenuData = [...menuData];
+                triggerMenuRenders();
             },
             (error) => { console.error("❌ Firestore Menu Error:", error.message); }
         );
 
-        // 2. Sync Social Feed Posts
         db.collection("posts").onSnapshot(
+            { includeMetadataChanges: false },
             (snapshot) => {
                 const posts = [];
                 snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
                 
                 posts.sort((a, b) => {
-                    if (a.order !== undefined && b.order !== undefined) {
-                        return a.order - b.order;
-                    }
+                    if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
                     return (b.timestamp || 0) - (a.timestamp || 0);
                 });
 
@@ -4525,99 +4544,103 @@
                 } else {
                     try { localStorage.removeItem('acp_cached_posts'); } catch(e){}
                 }
-                workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-
-                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-                console.log("⚡ Live Posts Synced:", posts.length, "posts");
+                workingFeedPosts = [...feedPosts];
+                triggerPostRenders();
             },
             (error) => { console.error("❌ Firestore Posts Error:", error.message); }
         );
 
-        // 3. Sync Customer Orders
         db.collection("orders").onSnapshot(
             (snapshot) => {
                 const orders = [];
                 snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
                 
                 ordersList.length = 0;
-                if (orders.length > 0) {
-                    ordersList.push(...orders);
-                }
+                if (orders.length > 0) ordersList.push(...orders);
 
                 if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                console.log("⚡ Live Orders Synced:", orders.length, "orders");
             },
             (error) => { console.error("❌ Firestore Orders Error:", error.message); }
         );
 
-        // 4. Sync CRM Registered Users
         db.collection("users").onSnapshot(
             (snapshot) => {
                 const users = [];
                 snapshot.forEach((doc) => { users.push({ ...doc.data() }); });
-
                 users.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
                 registeredUsers.length = 0;
-                if (users.length > 0) {
-                    registeredUsers.push(...users);
-                }
+                if (users.length > 0) registeredUsers.push(...users);
 
                 if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                console.log("⚡ Live Users Synced:", users.length, "users");
             },
             (error) => { console.error("❌ Firestore Users Error:", error.message); }
         );
 
-        // DIRECT FIRESTORE WRITE / DELETE HELPERS
+        // 5. NON-BLOCKING ASYNC FIRESTORE WRITES (Instant 0ms UI Response)
         window.dbSaveFoodItem = function(item) {
             if (!item || !item.id) return;
-            db.collection("menu").doc(item.id.toString()).set(item, { merge: true });
+            setTimeout(() => {
+                db.collection("menu").doc(item.id.toString()).set(item, { merge: true }).catch(console.error);
+            }, 0);
         };
 
         window.dbDeleteFoodItem = function(id) {
             if (!id) return;
-            db.collection("menu").doc(id.toString()).delete();
+            setTimeout(() => {
+                db.collection("menu").doc(id.toString()).delete().catch(console.error);
+            }, 0);
         };
 
         window.dbSavePost = function(post) {
             if (!post || !post.id) return;
-            db.collection("posts").doc(post.id.toString()).set(post, { merge: true });
+            setTimeout(() => {
+                db.collection("posts").doc(post.id.toString()).set(post, { merge: true }).catch(console.error);
+            }, 0);
         };
 
         window.dbDeletePost = function(id) {
             if (!id) return;
-            db.collection("posts").doc(id.toString()).delete();
+            setTimeout(() => {
+                db.collection("posts").doc(id.toString()).delete().catch(console.error);
+            }, 0);
         };
 
+        // Instant Order Placement (Runs in background, doesn't freeze cart/checkout UI)
         window.dbSaveOrder = function(order) {
             if (!order || !order.id) return;
             const cleanId = order.id.replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-            db.collection("orders").doc(cleanId).set(order, { merge: true });
+            setTimeout(() => {
+                db.collection("orders").doc(cleanId).set(order, { merge: true }).catch(console.error);
+            }, 0);
         };
 
         window.dbDeleteOrder = function(orderId) {
             if (!orderId) return;
             const cleanId = orderId.replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-            db.collection("orders").doc(cleanId).delete();
+            setTimeout(() => {
+                db.collection("orders").doc(cleanId).delete().catch(console.error);
+            }, 0);
         };
 
         window.dbSaveUser = function(user) {
             if (!user || !user.phone) return;
             if (!user.timestamp) user.timestamp = Date.now();
             const cleanId = user.phone.replace(/[^0-9]/g, '') || Date.now().toString();
-            db.collection("users").doc(cleanId).set(user, { merge: true });
+            setTimeout(() => {
+                db.collection("users").doc(cleanId).set(user, { merge: true }).catch(console.error);
+            }, 0);
         };
 
         window.dbDeleteUser = function(phone) {
             if (!phone) return;
             const cleanId = phone.replace(/[^0-9]/g, '');
-            db.collection("users").doc(cleanId).delete();
+            setTimeout(() => {
+                db.collection("users").doc(cleanId).delete().catch(console.error);
+            }, 0);
         };
 
-        // FRONTEND ACTION HOOKS FOR IMMEDIATE REAL-TIME FIRESTORE SYNC
-
+        // 6. FRONTEND HOOKS (Fully Non-Blocking)
         const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
         window.handleFoodFormSubmit = function(event) {
             const editId = document.getElementById('editFoodId')?.value;
@@ -4635,14 +4658,16 @@
         window.saveCatalogOrderChanges = function() {
             if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
             if (menuData && menuData.length > 0) {
+                const batch = db.batch();
                 menuData.forEach((item, idx) => {
                     item.order = idx;
-                    window.dbSaveFoodItem(item);
+                    const docRef = db.collection("menu").doc(item.id.toString());
+                    batch.set(docRef, item, { merge: true });
                 });
+                batch.commit().catch(err => console.error("Batch save error:", err));
             }
         };
 
-        // Catalog Item Hide/Unhide Sync Hook
         const orig_toggleCatalogItemHide = window.toggleCatalogItemHide;
         window.toggleCatalogItemHide = function(id) {
             if (orig_toggleCatalogItemHide) orig_toggleCatalogItemHide(id);
@@ -4650,7 +4675,6 @@
             if (item) window.dbSaveFoodItem(item);
         };
 
-        // Catalog Item Available/Unavailable Sync Hook
         const orig_toggleCatalogItemAvailability = window.toggleCatalogItemAvailability;
         window.toggleCatalogItemAvailability = function(id) {
             if (orig_toggleCatalogItemAvailability) orig_toggleCatalogItemAvailability(id);
@@ -4681,14 +4705,16 @@
         window.savePostOrderChanges = function() {
             if (orig_savePostOrderChanges) orig_savePostOrderChanges();
             if (feedPosts && feedPosts.length > 0) {
+                const batch = db.batch();
                 feedPosts.forEach((post, idx) => {
                     post.order = idx;
-                    window.dbSavePost(post);
+                    const docRef = db.collection("posts").doc(post.id.toString());
+                    batch.set(docRef, post, { merge: true });
                 });
+                batch.commit().catch(err => console.error("Batch post order error:", err));
             }
         };
 
-        // Feed Post Hide/Show Sync Hook
         const orig_togglePostHide = window.togglePostHide;
         window.togglePostHide = function(id) {
             if (orig_togglePostHide) orig_togglePostHide(id);
@@ -4702,11 +4728,20 @@
             window.dbDeletePost(postId);
         };
 
+        let actionTimeouts = {};
+        function debouncedDbSavePost(post) {
+            if (!post || !post.id) return;
+            clearTimeout(actionTimeouts[post.id]);
+            actionTimeouts[post.id] = setTimeout(() => {
+                window.dbSavePost(post);
+            }, 300);
+        }
+
         const orig_submitComment = window.submitComment;
         window.submitComment = function(id) {
             if (orig_submitComment) orig_submitComment(id);
             const post = feedPosts.find(p => p.id === id);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_submitUserReply = window.submitUserReply;
@@ -4715,7 +4750,7 @@
             if (orig_submitUserReply) orig_submitUserReply();
             if (postId) {
                 const post = feedPosts.find(p => p.id === postId);
-                if (post) window.dbSavePost(post);
+                if (post) debouncedDbSavePost(post);
             }
         };
 
@@ -4723,65 +4758,66 @@
         window.likePost = function(id) {
             if (orig_likePost) orig_likePost(id);
             const post = feedPosts.find(p => p.id === id);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_likeComment = window.likeComment;
         window.likeComment = function(postId, commentIndex) {
             if (orig_likeComment) orig_likeComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_dislikeComment = window.dislikeComment;
         window.dislikeComment = function(postId, commentIndex) {
             if (orig_dislikeComment) orig_dislikeComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_likeReply = window.likeReply;
         window.likeReply = function(postId, commentIndex, replyIndex) {
             if (orig_likeReply) orig_likeReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_dislikeReply = window.dislikeReply;
         window.dislikeReply = function(postId, commentIndex, replyIndex) {
             if (orig_dislikeReply) orig_dislikeReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_deleteComment = window.deleteComment;
         window.deleteComment = function(postId, commentIndex) {
             if (orig_deleteComment) orig_deleteComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_deleteReply = window.deleteReply;
         window.deleteReply = function(postId, commentIndex, replyIndex) {
             if (orig_deleteReply) orig_deleteReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_saveEditComment = window.saveEditComment;
         window.saveEditComment = function(postId, commentIndex) {
             if (orig_saveEditComment) orig_saveEditComment(postId, commentIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
         const orig_saveEditReply = window.saveEditReply;
         window.saveEditReply = function(postId, commentIndex, replyIndex) {
             if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
             const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            if (post) debouncedDbSavePost(post);
         };
 
+        // Instant Finalize Order (Zero wait time for customer)
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
         window.finalizeOrderAndSendWhatsApp = function() {
             if (orig_finalizeOrder) orig_finalizeOrder();
