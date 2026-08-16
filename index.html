@@ -4647,7 +4647,7 @@
 
 <script>
     (function() {
-        // 1. INSTANT LOCAL CACHE HYDRATION (Zero Wait / Microsecond Paint)
+        // 1. INSTANT LOCAL CACHE HYDRATION (Zero Wait / Microsecond Paint for Users)
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
             const cachedPosts = localStorage.getItem('acp_cached_posts');
@@ -4661,7 +4661,6 @@
                     if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                     if (typeof renderLocalMenu === 'function') renderLocalMenu();
                     if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
                 }
             }
 
@@ -4672,7 +4671,6 @@
                     feedPosts.push(...parsedPosts);
                     if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
                     if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
                 }
             }
         } catch(e) {
@@ -4700,116 +4698,120 @@
 
         // Offline Persistence for Zero Lag on Mobile Networks
         try {
-            db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-                if (err.code === 'failed-precondition' || err.code === 'unimplemented') {
-                    // Multi-tab open or browser unsupported, silent fallback
-                }
-            });
+            db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         } catch(e){}
 
-        // REAL-TIME FIRESTORE LISTENERS
-
-        // 1. Sync Food Catalog
+        // --- LIGHTWEIGHT USER LISTENERS (Loads instantly for customers) ---
+        
+        // 1. Sync Food Catalog (Lightweight for customer store)
         db.collection("menu").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
                 const items = [];
                 snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
                 
-                items.sort((a, b) => {
-                    if (a.order !== undefined && b.order !== undefined) {
-                        return a.order - b.order;
-                    }
-                    return 0;
-                });
+                items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
 
                 if (typeof menuData !== 'undefined') {
                     menuData.length = 0;
                     if (items.length > 0) {
                         menuData.push(...items);
                         try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
-                    } else {
-                        try { localStorage.removeItem('acp_cached_menu'); } catch(e){}
                     }
                     if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
 
                     if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                     if (typeof renderLocalMenu === 'function') renderLocalMenu();
                     if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                    if (typeof renderAdminCatalog === 'function' && document.getElementById('admin-page') && !document.getElementById('admin-page').classList.contains('hidden')) {
+                        renderAdminCatalog();
+                    }
                 }
             },
             (error) => { console.error("Firestore Menu:", error.message); }
         );
 
-        // 2. Sync Social Posts
+        // 2. Sync Social Posts (Lightweight for customer social feed)
         db.collection("posts").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
                 const posts = [];
                 snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
                 
-                posts.sort((a, b) => {
-                    if (a.order !== undefined && b.order !== undefined) {
-                        return a.order - b.order;
-                    }
-                    return (b.timestamp || 0) - (a.timestamp || 0);
-                });
+                posts.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : (b.timestamp || 0) - (a.timestamp || 0));
 
                 if (typeof feedPosts !== 'undefined') {
                     feedPosts.length = 0;
                     if (posts.length > 0) {
                         feedPosts.push(...posts);
                         try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
-                    } else {
-                        try { localStorage.removeItem('acp_cached_posts'); } catch(e){}
                     }
                     if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
                     if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                    if (typeof renderAdminPostsList === 'function' && document.getElementById('admin-page') && !document.getElementById('admin-page').classList.contains('hidden')) {
+                        renderAdminPostsList();
+                    }
                 }
             },
             (error) => { console.error("Firestore Posts:", error.message); }
         );
 
-        // 3. Sync Customer Orders
-        db.collection("orders").onSnapshot(
-            { includeMetadataChanges: false },
-            (snapshot) => {
-                const orders = [];
-                snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
-                
-                if (typeof ordersList !== 'undefined') {
-                    ordersList.length = 0;
-                    if (orders.length > 0) {
-                        ordersList.push(...orders);
+        // --- HEAVY ADMIN LISTENERS (Triggered ONLY when Admin logs in) ---
+        let adminListenersInitialized = false;
+
+        window.initAdminBackendListeners = function() {
+            if (adminListenersInitialized) return;
+            adminListenersInitialized = true;
+
+            // 3. Sync Customer Orders (Admin Only)
+            db.collection("orders").onSnapshot(
+                { includeMetadataChanges: false },
+                (snapshot) => {
+                    const orders = [];
+                    snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
+                    
+                    if (typeof ordersList !== 'undefined') {
+                        ordersList.length = 0;
+                        if (orders.length > 0) {
+                            ordersList.push(...orders);
+                        }
+                        if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                     }
-                    if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                }
-            },
-            (error) => { console.error("Firestore Orders:", error.message); }
-        );
+                },
+                (error) => { console.error("Firestore Orders:", error.message); }
+            );
 
-        // 4. Sync Registered Customers
-        db.collection("users").onSnapshot(
-            { includeMetadataChanges: false },
-            (snapshot) => {
-                const users = [];
-                snapshot.forEach((doc) => { users.push({ ...doc.data() }); });
+            // 4. Sync Registered Customers (Admin Only)
+            db.collection("users").onSnapshot(
+                { includeMetadataChanges: false },
+                (snapshot) => {
+                    const users = [];
+                    snapshot.forEach((doc) => { users.push({ ...doc.data() }); });
 
-                users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-                if (typeof registeredUsers !== 'undefined') {
-                    registeredUsers.length = 0;
-                    if (users.length > 0) {
-                        registeredUsers.push(...users);
+                    if (typeof registeredUsers !== 'undefined') {
+                        registeredUsers.length = 0;
+                        if (users.length > 0) {
+                            registeredUsers.push(...users);
+                        }
+                        if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                     }
-                    if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                }
-            },
-            (error) => { console.error("Firestore Users:", error.message); }
-        );
+                },
+                (error) => { console.error("Firestore Users:", error.message); }
+            );
+        };
+
+        // Hook into admin passcode verification to instantly spin up admin backend sync
+        const orig_verifyAdminPasscode = window.verifyAdminPasscode;
+        window.verifyAdminPasscode = function() {
+            if (orig_verifyAdminPasscode) orig_verifyAdminPasscode();
+            const codeField = document.getElementById('adminPasscode');
+            if (codeField && codeField.value === '7574') {
+                window.initAdminBackendListeners();
+            }
+        };
 
         // NON-BLOCKING ASYNC FIRESTORE WRITERS (Zero Delay UI Execution)
         window.dbSaveFoodItem = function(item) {
