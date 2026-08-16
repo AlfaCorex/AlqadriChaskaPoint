@@ -4648,7 +4648,7 @@
 <script>
     (function() {
         // =========================================================================
-        // 1. PUBLIC LIGHTWEIGHT HYDRATION (Microsecond Paint for Regular Customers)
+        // 1. PUBLIC LIGHTWEIGHT HYDRATION (Instant Microsecond Paint for Users)
         // =========================================================================
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
@@ -4696,16 +4696,15 @@
         
         const db = firebase.firestore();
 
-        // Offline Persistence for Zero Lag on mobile networks
         try {
             db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         } catch(e){}
 
         // =========================================================================
-        // 2. PUBLIC REALTIME LISTENERS (Only Essential Customer Collections)
+        // 2. PUBLIC REALTIME LISTENERS (Only Customer-Facing Menu & Posts)
         // =========================================================================
         
-        // (A) Sync Food Catalog
+        // (A) Sync Menu
         db.collection("menu").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
@@ -4719,7 +4718,7 @@
                         menuData.push(...items);
                         try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
                     }
-                    if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
 
                     if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                     if (typeof renderLocalMenu === 'function') renderLocalMenu();
@@ -4731,10 +4730,10 @@
                     }
                 }
             },
-            (error) => { console.error("Firestore Menu Error:", error.message); }
+            (error) => { console.error("Firestore Menu:", error.message); }
         );
 
-        // (B) Sync Social Posts
+        // (B) Sync Posts
         db.collection("posts").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
@@ -4748,7 +4747,7 @@
                         feedPosts.push(...posts);
                         try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
                     }
-                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
 
                     if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
                     
@@ -4758,11 +4757,11 @@
                     }
                 }
             },
-            (error) => { console.error("Firestore Posts Error:", error.message); }
+            (error) => { console.error("Firestore Posts:", error.message); }
         );
 
         // =========================================================================
-        // 3. PUBLIC ACTIONS (Instant Customer Side Firestore Writers)
+        // 3. PUBLIC ACTION WRITERS (Orders & User Registrations)
         // =========================================================================
         window.dbSaveOrder = function(order) {
             if (!order || !order.id) return;
@@ -4781,7 +4780,6 @@
             }, 0);
         };
 
-        // Customer Hook Overrides
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
         window.finalizeOrderAndSendWhatsApp = function() {
             if (orig_finalizeOrder) orig_finalizeOrder();
@@ -4800,40 +4798,37 @@
         };
 
         // =========================================================================
-        // 4. INSTANT ADMIN ACTIVATION & DEFERRED BACKEND LOADER
+        // 4. LIGHTNING-FAST 0ms ADMIN PORTAL SWITCH
         // =========================================================================
         let adminBackendLoaded = false;
 
-        // Instant Password Check -> Immediate UI Show -> Background Lazy Backend Load
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
                 
-                // STEP 1: 0ms Immediate UI Transition (Zero Lag)
+                // STEP 1: Direct DOM Switch (Instant Frame Render - 0ms Delay)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 document.getElementById('customer-page').classList.add('hidden');
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
 
-                // STEP 2: Instant UI Initial Render with Local State
-                if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
-                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-
-                if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
-                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-                if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                if (typeof resetAdminForm === 'function') resetAdminForm();
-                if (typeof switchAdminTab === 'function') switchAdminTab('orders');
-
-                // STEP 3: Quietly Initialize Admin Backend in Background (Deferred 500ms - 1.5s)
-                if (!adminBackendLoaded) {
-                    adminBackendLoaded = true;
-                    setTimeout(() => {
-                        initAdminBackendSuite();
-                    }, 400);
+                // STEP 2: Only Render the Active "Orders" Tab View (Avoid blocking CPU)
+                if (typeof switchAdminTab === 'function') {
+                    switchAdminTab('orders');
                 }
+
+                // STEP 3: Background Asynchronous Initialization (Completely Non-Blocking)
+                setTimeout(() => {
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+                    if (typeof resetAdminForm === 'function') resetAdminForm();
+
+                    if (!adminBackendLoaded) {
+                        adminBackendLoaded = true;
+                        initAdminBackendSuite();
+                    }
+                }, 100);
             } else {
                 if (typeof showNotification === 'function') {
                     showNotification('Incorrect passcode!', 'warning');
@@ -4848,12 +4843,10 @@
         };
 
         // =========================================================================
-        // 5. ON-DEMAND ADMIN BACKEND SUITE (Only Runs When Admin Enters Dashboard)
+        // 5. DEFERRED ADMIN BACKEND SUITE (Runs after UI is completely painted)
         // =========================================================================
         function initAdminBackendSuite() {
-            console.log("⚡ Admin backend loaded & synced in background.");
-
-            // 1. Hydrate cached users locally if available
+            // 1. Hydrate CRM Cached Users
             try {
                 const cachedUsers = localStorage.getItem('acp_cached_users');
                 if (cachedUsers && typeof registeredUsers !== 'undefined' && registeredUsers.length === 0) {
@@ -4866,7 +4859,7 @@
                 }
             } catch(e){}
 
-            // 2. Admin Firestore Writers
+            // 2. Admin Writers
             window.dbSaveFoodItem = function(item) {
                 if (!item || !item.id) return;
                 setTimeout(() => {
@@ -4911,7 +4904,7 @@
                 }, 0);
             };
 
-            // 3. Attach Admin Realtime Listeners (Orders & CRM Users)
+            // 3. Admin Listeners (Orders & CRM Users)
             db.collection("orders").onSnapshot(
                 { includeMetadataChanges: false },
                 (snapshot) => {
@@ -4923,7 +4916,7 @@
                         if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                     }
                 },
-                (error) => { console.error("Admin Orders Listener Error:", error.message); }
+                (error) => { console.error("Admin Orders:", error.message); }
             );
 
             db.collection("users").onSnapshot(
@@ -4949,10 +4942,10 @@
                         if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                     }
                 },
-                (error) => { console.error("Admin Users Listener Error:", error.message); }
+                (error) => { console.error("Admin Users:", error.message); }
             );
 
-            // 4. Attach Admin Operation Hooks
+            // 4. Admin CRUD Hooks
             const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
             window.handleFoodFormSubmit = function(event) {
                 const editId = document.getElementById('editFoodId')?.value;
