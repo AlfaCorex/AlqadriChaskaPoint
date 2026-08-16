@@ -4773,6 +4773,7 @@
             if (adminListenersInitialized) return;
             adminListenersInitialized = true;
 
+            // Background execution after the UI is already fully painted on screen
             setTimeout(() => {
                 // 3. Sync Customer Orders (Admin Only)
                 db.collection("orders").onSnapshot(
@@ -4818,46 +4819,37 @@
                     },
                     (error) => { console.error("Firestore Users:", error.message); }
                 );
-            }, 400);
+            }, 300); // 300ms delay ensures UI paints instantly first
         };
 
-        // Instant Zero-Lag Admin Login Hook (100% Instant Open without blocking main thread)
+        // Instant Zero-Lag Admin Login Hook (100% Instant Open)
+        const orig_verifyAdminPasscode = window.verifyAdminPasscode;
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
-                // 1. Instant modal close & screen switch (0ms delay)
+                // 1. Instantly hide modal and open admin portal UI (0ms delay)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 
                 document.getElementById('customer-page').classList.add('hidden');
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
+                
+                // 2. Render UI instantly using local cache/data
+                if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
+                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
-                // 2. Defer heavy data mapping slightly using requestAnimationFrame to protect mobile CPU
-                requestAnimationFrame(() => {
-                    if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
-                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
+                if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
+                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
+                if (typeof resetAdminForm === 'function') resetAdminForm();
+                if (typeof switchAdminTab === 'function') switchAdminTab('orders');
 
-                    if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
-                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-                    if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                    if (typeof resetAdminForm === 'function') resetAdminForm();
-                    if (typeof switchAdminTab === 'function') switchAdminTab('orders');
-
-                    // 3. Initialize background sync
-                    window.initAdminBackendListeners();
-                });
+                // 3. Kick off background data sync after portal is already open
+                window.initAdminBackendListeners();
             } else {
-                if (typeof showNotification === 'function') {
-                    showNotification('Incorrect passcode!', 'warning');
-                } else {
-                    alert('Incorrect passcode!');
-                }
-                if (codeField) {
-                    codeField.value = '';
-                    codeField.focus();
-                }
+                if (orig_verifyAdminPasscode) orig_verifyAdminPasscode();
             }
         };
 
