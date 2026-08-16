@@ -5442,8 +5442,323 @@
 
 <script>
     (function() {
+        "use strict";
+
         // =========================================================================
-        // 1. PUBLIC LIGHTWEIGHT HYDRATION (Microsecond Paint for Regular Customers)
+        // 1. FAST DOM PAINTERS (Optimized with single-paint fragment insertion)
+        // =========================================================================
+        window.renderCustomerMenu = function() {
+            const container = document.getElementById('menuGridContainer');
+            if (!container) return;
+
+            const items = menuData.filter(x => x.category === 'fast' && x.isHidden !== true);
+            if (items.length === 0) {
+                container.innerHTML = `<div class="col-span-3 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No fast food items added yet.</div>`;
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const currentQty = cartItems[item.id] || 0;
+                const isSelected = currentQty > 0;
+
+                const cardOutline = isSelected 
+                    ? 'border-2 border-[#FF5A36] ring-2 ring-[#FF5A36]/20 bg-orange-50/20' 
+                    : 'border border-slate-200 bg-white';
+
+                const checkBadge = isSelected 
+                    ? `<div class="acp-badge-indicator absolute top-1.5 right-1.5 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
+                    : '';
+
+                html += `
+                    <div class="portrait-card relative ${cardOutline}" id="customer-card-${item.id}">
+                        ${checkBadge}
+                        <div class="card-image-box" style="background-image: url('${item.image}');"></div>
+                        <div class="card-info-box">
+                            <div class="text-center space-y-0">
+                                <h3 class="card-title-compact !mb-0" title="${item.name}">${item.name}</h3>
+                                <div class="card-price-compact !mb-0 !mt-0">Rs. ${item.price}</div>
+                            </div>
+                            <div class="selector-box-compact mt-1">
+                                <button class="btn-qty-mini" onclick="updateQty(${item.id}, -1)">-</button>
+                                <span class="qty-val-mini" id="qty-${item.id}">${currentQty}</span>
+                                <button class="btn-qty-mini" onclick="updateQty(${item.id}, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        };
+
+        window.renderLocalMenu = function() {
+            const container = document.getElementById('localMenuGridContainer');
+            if (!container) return;
+
+            const items = menuData.filter(x => x.category === 'local' && x.isHidden !== true);
+            if (items.length === 0) {
+                container.innerHTML = `<div class="col-span-3 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No local items added yet.</div>`;
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const currentQty = cartItems[item.id] || 0;
+                const isSelected = currentQty > 0;
+
+                const cardOutline = isSelected 
+                    ? 'border-2 border-[#FF5A36] ring-2 ring-[#FF5A36]/20 bg-orange-50/20' 
+                    : 'border border-slate-200 bg-white';
+
+                const checkBadge = isSelected 
+                    ? `<div class="acp-badge-indicator absolute top-1 right-1 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
+                    : '';
+
+                html += `
+                    <div class="local-mini-card relative ${cardOutline}" id="local-card-${item.id}">
+                        ${checkBadge}
+                        <img src="${item.image}" decoding="async" loading="lazy" alt="${item.name}" onerror="this.src='https://placehold.co/100x60/FF5A36/ffffff?text=ACP'">
+                        <div class="text-center space-y-0 w-full">
+                            <h3 class="local-title-compact !mb-0">${item.name}</h3>
+                            <div class="local-price-compact !mb-0 !mt-0">Rs. ${item.price}</div>
+                        </div>
+                        <div class="selector-box-compact w-full text-center mt-1 px-1 pb-1">
+                            <button class="btn-qty-mini !w-5 !h-5" onclick="updateQty(${item.id}, -1)">-</button>
+                            <span class="qty-val-mini !w-4 !text-[10px]" id="qty-local-${item.id}">${currentQty}</span>
+                            <button class="btn-qty-mini !w-5 !h-5" onclick="updateQty(${item.id}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        };
+
+        window.renderDrinksMenu = function() {
+            const container = document.getElementById('drinksMenuGridContainer');
+            if (!container) return;
+
+            const items = menuData.filter(x => x.category === 'drinks' && x.isHidden !== true);
+            if (items.length === 0) {
+                container.innerHTML = `<div class="col-span-3 py-6 text-center text-xs text-slate-400 italic bg-white rounded-xl border border-slate-200">No drinks added yet.</div>`;
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                let totalQty = 0;
+                Object.keys(cartItems).forEach(k => {
+                    if (k == item.id || k.startsWith(item.id + '_')) totalQty += cartItems[k];
+                });
+                const isSelected = totalQty > 0;
+
+                const cardOutline = isSelected 
+                    ? 'border-2 border-[#FF5A36] ring-2 ring-[#FF5A36]/20 bg-orange-50/20' 
+                    : 'border border-slate-200 bg-white';
+
+                const checkBadge = isSelected 
+                    ? `<div class="acp-badge-indicator absolute top-1 right-1 bg-[#FF5A36] text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black shadow-md z-10"><i class="fa-solid fa-check"></i></div>` 
+                    : '';
+
+                html += `
+                    <div class="local-mini-card relative ${cardOutline}" id="drink-card-${item.id}">
+                        ${checkBadge}
+                        <img src="${item.image}" decoding="async" loading="lazy" alt="${item.name}" onerror="this.src='https://placehold.co/100x60/FF5A36/ffffff?text=ACP'">
+                        <div class="text-center space-y-0 w-full">
+                            <h3 class="local-title-compact !mb-0">${item.name}</h3>
+                            <div class="local-price-compact !mb-0 !mt-0">Rs. ${item.price}</div>
+                        </div>
+                        <div class="selector-box-compact w-full text-center mt-1 px-1 pb-1">
+                            <button class="btn-qty-mini !w-5 !h-5" onclick="handleDrinkQtyClick(${item.id}, -1)">-</button>
+                            <span class="qty-val-mini !w-4 !text-[10px]" id="qty-drink-${item.id}">${totalQty}</span>
+                            <button class="btn-qty-mini !w-5 !h-5" onclick="handleDrinkQtyClick(${item.id}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        };
+
+        window.hideAppPreloader = function() {
+            const preloader = document.getElementById('appPreloader');
+            if (preloader) {
+                preloader.style.display = 'none';
+                preloader.remove();
+            }
+        };
+
+        window.renderAdminCatalog = function() {
+            const container = document.getElementById('adminCatalogRows');
+            const counter = document.getElementById('adminCatalogCount');
+            if (!container) return;
+
+            const filteredData = activeAdminCatalogFilter === 'all' 
+                ? workingMenuData 
+                : workingMenuData.filter(x => x.category === activeAdminCatalogFilter);
+
+            if (counter) counter.innerText = filteredData.length;
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="p-3 text-center text-slate-400 font-bold text-[11px] italic">
+                            No products listed under this category.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let rowsHtml = '';
+            for (let i = 0; i < filteredData.length; i++) {
+                const item = filteredData[i];
+                let categoryBadge = '';
+                if (item.category === 'fast') {
+                    categoryBadge = '<span class="text-[8px] bg-indigo-50 text-indigo-700 font-extrabold px-1 py-0.2 rounded border border-indigo-200 uppercase">Fast Food</span>';
+                } else if (item.category === 'local') {
+                    categoryBadge = '<span class="text-[8px] bg-amber-50 text-amber-700 font-extrabold px-1 py-0.2 rounded border border-amber-200 uppercase">Local Menu</span>';
+                } else if (item.category === 'drinks') {
+                    categoryBadge = '<span class="text-[8px] bg-sky-50 text-sky-700 font-extrabold px-1 py-0.2 rounded border border-sky-200 uppercase">Cold Drink</span>';
+                }
+
+                const isHidden = item.isHidden === true;
+                const hideIconClass = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-slate-600';
+                const hideTitle = isHidden ? 'Unhide Product' : 'Hide Product';
+
+                const isAvailable = item.isAvailable !== false;
+                const availIconClass = isAvailable ? 'fa-circle-check text-emerald-600' : 'fa-circle-xmark text-rose-500';
+                const availTitle = isAvailable ? 'Mark Not Available' : 'Mark Available';
+
+                rowsHtml += `
+                    <tr class="hover:bg-slate-50 transition-all text-center">
+                        <td class="p-2 align-middle">
+                            <div class="flex flex-col items-center justify-center">
+                                <img src="${item.image}" decoding="async" loading="lazy" class="w-8 h-8 rounded-md object-cover border border-slate-200 mb-1" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
+                                <div class="font-bold text-slate-900 text-[10.5px] truncate max-w-[120px] leading-tight" title="${item.name}">${item.name}</div>
+                                <div class="mt-0.5">${categoryBadge}</div>
+                                <div class="flex items-center justify-center gap-2.5 mt-1 text-sm">
+                                    <button onclick="toggleCatalogItemHide(${item.id})" class="hover:scale-110 active:scale-90 transition-all" title="${hideTitle}">
+                                        <i class="fa-solid ${hideIconClass}"></i>
+                                    </button>
+                                    <span class="text-slate-300 font-normal">|</span>
+                                    <button onclick="toggleCatalogItemAvailability(${item.id})" class="hover:scale-110 active:scale-90 transition-all" title="${availTitle}">
+                                        <i class="fa-solid ${availIconClass}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-2 align-middle font-black text-slate-850 text-[10.5px]">Rs. ${item.price}</td>
+                        <td class="p-2 align-middle">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="moveCatalogItem(${item.id}, 'up')" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Move Up">
+                                    <i class="fa-solid fa-arrow-up text-[8px]"></i>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="moveCatalogItem(${item.id}, 'down')" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Move Down">
+                                    <i class="fa-solid fa-arrow-down text-[8px]"></i>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="loadFoodToEdit(${item.id})" class="w-5 h-5 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition-all font-bold" title="Edit Item">
+                                    <i class="fa-solid fa-pencil text-[8px]"></i>
+                                </button>
+                                <span class="text-slate-300">|</span>
+                                <button onclick="deleteFoodCatalog(${item.id})" class="w-5 h-5 inline-flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 text-white rounded transition-all font-bold" title="Delete Item">
+                                    <i class="fa-solid fa-trash text-[8px]"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            container.innerHTML = rowsHtml;
+        };
+
+        window.renderAdminPostsList = function() {
+            const container = document.getElementById('adminPostsListContainer');
+            const counter = document.getElementById('lblAdminPostsCount');
+            if (!container) return;
+
+            if (counter) counter.innerText = workingFeedPosts.length;
+
+            if (workingFeedPosts.length === 0) {
+                container.innerHTML = `
+                    <div class="py-8 text-center text-slate-400 font-bold text-xs">
+                        <i class="fa-regular fa-newspaper text-2xl mb-1 text-slate-300 block"></i>
+                        No active posts.
+                    </div>
+                `;
+                return;
+            }
+
+            let postsHtml = '';
+            for (let i = 0; i < workingFeedPosts.length; i++) {
+                const post = workingFeedPosts[i];
+                const totalComments = getTotalCommentsCount(post);
+                const isHidden = post.isHidden === true;
+                
+                // Explicit Hide / Show text with icons matching requirement
+                const hideShowText = isHidden ? 'Hide' : 'Show';
+                const hideShowColor = isHidden ? 'text-rose-500 hover:text-rose-700' : 'text-emerald-600 hover:text-emerald-700';
+                const hideShowIcon = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-emerald-600';
+                const hideTitle = isHidden ? 'Show Post' : 'Hide Post';
+
+                postsHtml += `
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                        <div class="flex gap-2.5 items-start">
+                            <img src="${post.image}" decoding="async" loading="lazy" class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
+                            <div class="space-y-0.5 flex-1">
+                                <h4 class="text-xs font-black text-slate-900 line-clamp-1">${post.title}</h4>
+                                <p class="text-[9px] text-slate-505 line-clamp-2 leading-tight whitespace-pre-line">${post.desc}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-[10px] font-bold pt-1.5 border-t border-slate-200 text-slate-600">
+                            <span class="text-rose-505 flex items-center gap-1">
+                                <i class="fa-solid fa-heart text-rose-500"></i> ${post.likes} Likes
+                            </span>
+                            <span class="text-sky-605 flex items-center gap-1 font-extrabold">
+                                <i class="fa-regular fa-comment"></i> ${totalComments} Comments
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button onclick="openAdminCommentsModal(${post.id})" class="px-2.5 py-1 bg-orange-100 text-[#FF5A36] hover:bg-orange-200 rounded-md font-extrabold transition-all flex items-center gap-1 hover:scale-105 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-comments"></i> Comments <i class="fa-solid fa-pen-to-square text-[10px] opacity-80"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1.5 border-t border-slate-200 text-[11px]">
+                            <button onclick="loadPostToEdit(${post.id})" class="text-slate-600 hover:text-primary transition-all font-bold p-1 hover:scale-105" title="Edit Post">
+                                <i class="fa-solid fa-pen-to-square text-[10px]"></i> Edit
+                            </button>
+                            <span class="text-slate-300">|</span>
+                            <button onclick="togglePostHide(${post.id})" class="${hideShowColor} transition-all font-bold p-1 hover:scale-105 flex items-center gap-1" title="${hideTitle}">
+                                <i class="fa-solid ${hideShowIcon} text-[10px]"></i> <span>${hideShowText}</span>
+                            </button>
+                            <span class="text-slate-300">|</span>
+                            <div class="flex items-center gap-1 font-bold">
+                                <button onclick="movePostItem(${post.id}, 'up')" class="w-6 h-6 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-all font-bold shadow-sm hover:scale-105" title="Move Up">
+                                    <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                                </button>
+                                <span class="text-slate-400 text-xs px-0.5" title="Vertical Dots">⋮</span>
+                                <button onclick="movePostItem(${post.id}, 'down')" class="w-6 h-6 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-all font-bold shadow-sm hover:scale-105" title="Move Down">
+                                    <i class="fa-solid fa-arrow-down text-[10px]"></i>
+                                </button>
+                            </div>
+                            <span class="text-slate-300">|</span>
+                            <button onclick="promptDeletePost(${post.id})" class="text-red-500 hover:text-red-700 transition-all font-bold p-1 hover:scale-105" title="Delete Post">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = postsHtml;
+        };
+
+        // =========================================================================
+        // 2. INSTANT CACHE HYDRATION (Microsecond Initial Paint)
         // =========================================================================
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
@@ -5491,16 +5806,13 @@
         
         const db = firebase.firestore();
 
-        // Offline Persistence for Zero Lag on mobile networks
         try {
             db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         } catch(e){}
 
         // =========================================================================
-        // 2. PUBLIC REALTIME LISTENERS (Only Essential Customer Collections)
+        // 3. PUBLIC REALTIME LISTENERS (Only Customer-Facing Menu & Posts)
         // =========================================================================
-        
-        // (A) Sync Food Catalog
         db.collection("menu").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
@@ -5514,7 +5826,7 @@
                         menuData.push(...items);
                         try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
                     }
-                    if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
 
                     if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                     if (typeof renderLocalMenu === 'function') renderLocalMenu();
@@ -5526,10 +5838,9 @@
                     }
                 }
             },
-            (error) => { console.error("Firestore Menu Error:", error.message); }
+            (error) => { console.error("Firestore Menu:", error.message); }
         );
 
-        // (B) Sync Social Posts
         db.collection("posts").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
@@ -5543,7 +5854,7 @@
                         feedPosts.push(...posts);
                         try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
                     }
-                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
 
                     if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
                     
@@ -5553,11 +5864,11 @@
                     }
                 }
             },
-            (error) => { console.error("Firestore Posts Error:", error.message); }
+            (error) => { console.error("Firestore Posts:", error.message); }
         );
 
         // =========================================================================
-        // 3. PUBLIC ACTIONS (Instant Customer Side Firestore Writers)
+        // 4. PUBLIC ACTION WRITERS (Orders & User Registrations)
         // =========================================================================
         window.dbSaveOrder = function(order) {
             if (!order || !order.id) return;
@@ -5576,7 +5887,6 @@
             }, 0);
         };
 
-        // Customer Hook Overrides
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
         window.finalizeOrderAndSendWhatsApp = function() {
             if (orig_finalizeOrder) orig_finalizeOrder();
@@ -5595,40 +5905,34 @@
         };
 
         // =========================================================================
-        // 4. INSTANT ADMIN ACTIVATION & DEFERRED BACKEND LOADER
+        // 5. LIGHTNING-FAST 0ms ADMIN PORTAL SWITCH
         // =========================================================================
         let adminBackendLoaded = false;
 
-        // Instant Password Check -> Immediate UI Show -> Background Lazy Backend Load
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
                 
-                // STEP 1: 0ms Immediate UI Transition (Zero Lag)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 document.getElementById('customer-page').classList.add('hidden');
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
 
-                // STEP 2: Instant UI Initial Render with Local State
-                if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
-                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-
-                if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
-                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-                if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                if (typeof resetAdminForm === 'function') resetAdminForm();
-                if (typeof switchAdminTab === 'function') switchAdminTab('orders');
-
-                // STEP 3: Quietly Initialize Admin Backend in Background (Deferred 500ms - 1.5s)
-                if (!adminBackendLoaded) {
-                    adminBackendLoaded = true;
-                    setTimeout(() => {
-                        initAdminBackendSuite();
-                    }, 400);
+                if (typeof switchAdminTab === 'function') {
+                    switchAdminTab('orders');
                 }
+
+                setTimeout(() => {
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+                    if (typeof resetAdminForm === 'function') resetAdminForm();
+
+                    if (!adminBackendLoaded) {
+                        adminBackendLoaded = true;
+                        initAdminBackendSuite();
+                    }
+                }, 80);
             } else {
                 if (typeof showNotification === 'function') {
                     showNotification('Incorrect passcode!', 'warning');
@@ -5643,12 +5947,9 @@
         };
 
         // =========================================================================
-        // 5. ON-DEMAND ADMIN BACKEND SUITE (Only Runs When Admin Enters Dashboard)
+        // 6. DEFERRED ADMIN BACKEND SUITE (Ultra Fast Background Sync)
         // =========================================================================
         function initAdminBackendSuite() {
-            console.log("⚡ Admin backend loaded & synced in background.");
-
-            // 1. Hydrate cached users locally if available
             try {
                 const cachedUsers = localStorage.getItem('acp_cached_users');
                 if (cachedUsers && typeof registeredUsers !== 'undefined' && registeredUsers.length === 0) {
@@ -5661,7 +5962,6 @@
                 }
             } catch(e){}
 
-            // 2. Admin Firestore Writers
             window.dbSaveFoodItem = function(item) {
                 if (!item || !item.id) return;
                 setTimeout(() => {
@@ -5706,7 +6006,6 @@
                 }, 0);
             };
 
-            // 3. Attach Admin Realtime Listeners (Orders & CRM Users)
             db.collection("orders").onSnapshot(
                 { includeMetadataChanges: false },
                 (snapshot) => {
@@ -5718,7 +6017,7 @@
                         if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                     }
                 },
-                (error) => { console.error("Admin Orders Listener Error:", error.message); }
+                (error) => { console.error("Admin Orders:", error.message); }
             );
 
             db.collection("users").onSnapshot(
@@ -5744,10 +6043,9 @@
                         if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                     }
                 },
-                (error) => { console.error("Admin Users Listener Error:", error.message); }
+                (error) => { console.error("Admin Users:", error.message); }
             );
 
-            // 4. Attach Admin Operation Hooks
             const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
             window.handleFoodFormSubmit = function(event) {
                 const editId = document.getElementById('editFoodId')?.value;
@@ -5772,18 +6070,31 @@
                 }
             };
 
-            const orig_toggleCatalogItemHide = window.toggleCatalogItemHide;
             window.toggleCatalogItemHide = function(id) {
-                if (orig_toggleCatalogItemHide) orig_toggleCatalogItemHide(id);
-                const item = menuData.find(x => x.id == id);
-                if (item) window.dbSaveFoodItem(item);
+                const item = workingMenuData.find(x => x.id === id);
+                if (!item) return;
+                item.isHidden = !item.isHidden;
+
+                const mainItem = menuData.find(x => x.id === id);
+                if (mainItem) mainItem.isHidden = item.isHidden;
+
+                window.renderAdminCatalog();
+                window.dbSaveFoodItem(item);
+                showNotification(item.isHidden ? 'Product hidden from customer view.' : 'Product is now visible on customer view.');
             };
 
-            const orig_toggleCatalogItemAvailability = window.toggleCatalogItemAvailability;
             window.toggleCatalogItemAvailability = function(id) {
-                if (orig_toggleCatalogItemAvailability) orig_toggleCatalogItemAvailability(id);
-                const item = menuData.find(x => x.id == id);
-                if (item) window.dbSaveFoodItem(item);
+                const item = workingMenuData.find(x => x.id === id);
+                if (!item) return;
+                if (item.isAvailable === undefined) item.isAvailable = true;
+                item.isAvailable = !item.isAvailable;
+
+                const mainItem = menuData.find(x => x.id === id);
+                if (mainItem) mainItem.isAvailable = item.isAvailable;
+
+                window.renderAdminCatalog();
+                window.dbSaveFoodItem(item);
+                showNotification(item.isAvailable ? 'Product marked as Available.' : 'Product marked as Not Available.');
             };
 
             const orig_deleteFoodCatalog = window.deleteFoodCatalog;
@@ -5816,11 +6127,17 @@
                 }
             };
 
-            const orig_togglePostHide = window.togglePostHide;
             window.togglePostHide = function(id) {
-                if (orig_togglePostHide) orig_togglePostHide(id);
-                const post = feedPosts.find(p => p.id === id);
-                if (post) window.dbSavePost(post);
+                const post = workingFeedPosts.find(p => p.id === id);
+                if (!post) return;
+                post.isHidden = !post.isHidden;
+
+                const mainPost = feedPosts.find(p => p.id === id);
+                if (mainPost) mainPost.isHidden = post.isHidden;
+
+                window.renderAdminPostsList();
+                window.dbSavePost(post);
+                showNotification(post.isHidden ? 'Post hidden from social feed.' : 'Post is now visible on social feed.');
             };
 
             const orig_deleteFeedPost = window.deleteFeedPost;
