@@ -4710,7 +4710,7 @@
             db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         } catch(e){}
 
-        // --- LIGHTWEIGHT USER LISTENERS (Loads instantly for customers) ---
+        // --- PUBLIC CUSTOMER LISTENERS (Loaded immediately for regular visitors) ---
         
         // 1. Sync Food Catalog
         db.collection("menu").onSnapshot(
@@ -4766,14 +4766,13 @@
             (error) => { console.error("Firestore Posts:", error.message); }
         );
 
-        // --- ULTRA-FAST DEFERRED ADMIN LISTENERS ---
+        // --- ADMIN-ONLY EXCLUSIVE LISTENERS (Stays completely inactive until admin logs in) ---
         let adminListenersInitialized = false;
 
         window.initAdminBackendListeners = function() {
             if (adminListenersInitialized) return;
             adminListenersInitialized = true;
 
-            // Background execution after the UI is already fully painted on screen
             setTimeout(() => {
                 // 3. Sync Customer Orders (Admin Only)
                 db.collection("orders").onSnapshot(
@@ -4819,37 +4818,46 @@
                     },
                     (error) => { console.error("Firestore Users:", error.message); }
                 );
-            }, 300); // 300ms delay ensures UI paints instantly first
+            }, 300);
         };
 
-        // Instant Zero-Lag Admin Login Hook (100% Instant Open)
-        const orig_verifyAdminPasscode = window.verifyAdminPasscode;
+        // Instant Zero-Lag Admin Login Hook (100% Instant Open without blocking main thread)
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
-                // 1. Instantly hide modal and open admin portal UI (0ms delay)
+                // 1. Instant modal close & screen switch (0ms delay)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 
                 document.getElementById('customer-page').classList.add('hidden');
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
-                
-                // 2. Render UI instantly using local cache/data
-                if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
-                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
-                if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
-                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-                if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                if (typeof resetAdminForm === 'function') resetAdminForm();
-                if (typeof switchAdminTab === 'function') switchAdminTab('orders');
+                // 2. Defer heavy data mapping slightly using requestAnimationFrame to protect mobile CPU
+                requestAnimationFrame(() => {
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
-                // 3. Kick off background data sync after portal is already open
-                window.initAdminBackendListeners();
+                    if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
+                    if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                    if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                    if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
+                    if (typeof resetAdminForm === 'function') resetAdminForm();
+                    if (typeof switchAdminTab === 'function') switchAdminTab('orders');
+
+                    // 3. Trigger admin-only backend sync now that admin has successfully entered
+                    window.initAdminBackendListeners();
+                });
             } else {
-                if (orig_verifyAdminPasscode) orig_verifyAdminPasscode();
+                if (typeof showNotification === 'function') {
+                    showNotification('Incorrect passcode!', 'warning');
+                } else {
+                    alert('Incorrect passcode!');
+                }
+                if (codeField) {
+                    codeField.value = '';
+                    codeField.focus();
+                }
             }
         };
 
