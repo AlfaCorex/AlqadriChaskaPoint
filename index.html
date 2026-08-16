@@ -1665,27 +1665,14 @@
         let workingMenuData = [];
         let workingFeedPosts = [];
 
-        // 1- Empty Initial Menu List: Admin will add items directly
+        // 1- Empty Initial Menu List: Cleared as requested
         let menuData = [];
 
         let ordersList = [];
         let registeredUsers = [];
-        let feedPosts = [
-            {
-                id: 101,
-                title: "🔥 Weekend Family Deal 20% OFF!",
-                image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80",
-                desc: "Enjoy our special Zinger burgers and crispy fries with your family.\nLimited time offer valid for this weekend only.\nVisit Alqadri Chaska Point today!",
-                authorName: "Alqadri Chaska Point",
-                timestamp: Date.now() - 3600000,
-                likes: 14,
-                isLiked: false,
-                likedUsers: [],
-                comments: [
-                    { commenter: "Usman Ali", text: "Amazing taste! Highly recommended.", isAdmin: false, timestamp: Date.now() - 1800000, likes: 3, dislikes: 0, likedUsers: [], dislikedUsers: [], replies: [] }
-                ]
-            }
-        ];
+        
+        // 2- Empty Initial Feed Posts: Cleared as requested
+        let feedPosts = [];
 
         let pendingDrinkItem = null;
         let variantQuantities = {}; 
@@ -4057,6 +4044,7 @@
                 const totalComments = getTotalCommentsCount(post);
                 const isHidden = post.isHidden === true;
                 
+                // Requirement 2: Explicit Hide / Show text with icons
                 const hideShowText = isHidden ? 'Hide' : 'Show';
                 const hideShowColor = isHidden ? 'text-rose-500 hover:text-rose-700' : 'text-emerald-600 hover:text-emerald-700';
                 const hideShowIcon = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-emerald-600';
@@ -4875,11 +4863,6 @@
                             </div>
                         </td>
                     </tr>
-                `;
-            }
-            container.innerHTML = rowsHtml;
-        };
-
         window.toggleCatalogItemHide = function(id) {
             const item = workingMenuData.find(x => x.id === id);
             if (!item) return;
@@ -4938,7 +4921,8 @@
                 const totalComments = getTotalCommentsCount(post);
                 const isHidden = post.isHidden === true;
                 
-                const hideShowText = isHidden ? 'Show' : 'Hide';
+                // Explicit Hide / Show text with icons matching your requirement
+                const hideShowText = isHidden ? 'Hide' : 'Show';
                 const hideShowColor = isHidden ? 'text-rose-500 hover:text-rose-700' : 'text-emerald-600 hover:text-emerald-700';
                 const hideShowIcon = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-emerald-600';
                 const hideTitle = isHidden ? 'Show Post' : 'Hide Post';
@@ -5459,7 +5443,7 @@
 <script>
     (function() {
         // =========================================================================
-        // 1. PUBLIC LIGHTWEIGHT HYDRATION (Instant Microsecond Paint for Users)
+        // 1. PUBLIC LIGHTWEIGHT HYDRATION (Microsecond Paint for Regular Customers)
         // =========================================================================
         try {
             const cachedMenu = localStorage.getItem('acp_cached_menu');
@@ -5507,15 +5491,16 @@
         
         const db = firebase.firestore();
 
+        // Offline Persistence for Zero Lag on mobile networks
         try {
             db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         } catch(e){}
 
         // =========================================================================
-        // 2. PUBLIC REALTIME LISTENERS (Only Customer-Facing Menu & Posts)
+        // 2. PUBLIC REALTIME LISTENERS (Only Essential Customer Collections)
         // =========================================================================
         
-        // (A) Sync Menu
+        // (A) Sync Food Catalog
         db.collection("menu").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
@@ -5529,7 +5514,7 @@
                         menuData.push(...items);
                         try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
                     }
-                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
 
                     if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                     if (typeof renderLocalMenu === 'function') renderLocalMenu();
@@ -5541,10 +5526,10 @@
                     }
                 }
             },
-            (error) => { console.error("Firestore Menu:", error.message); }
+            (error) => { console.error("Firestore Menu Error:", error.message); }
         );
 
-        // (B) Sync Posts
+        // (B) Sync Social Posts
         db.collection("posts").onSnapshot(
             { includeMetadataChanges: false },
             (snapshot) => {
@@ -5558,7 +5543,7 @@
                         feedPosts.push(...posts);
                         try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
                     }
-                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
                     if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
                     
@@ -5568,11 +5553,11 @@
                     }
                 }
             },
-            (error) => { console.error("Firestore Posts:", error.message); }
+            (error) => { console.error("Firestore Posts Error:", error.message); }
         );
 
         // =========================================================================
-        // 3. PUBLIC ACTION WRITERS (Orders & User Registrations)
+        // 3. PUBLIC ACTIONS (Instant Customer Side Firestore Writers)
         // =========================================================================
         window.dbSaveOrder = function(order) {
             if (!order || !order.id) return;
@@ -5591,6 +5576,7 @@
             }, 0);
         };
 
+        // Customer Hook Overrides
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
         window.finalizeOrderAndSendWhatsApp = function() {
             if (orig_finalizeOrder) orig_finalizeOrder();
@@ -5609,37 +5595,40 @@
         };
 
         // =========================================================================
-        // 4. LIGHTNING-FAST 0ms ADMIN PORTAL SWITCH
+        // 4. INSTANT ADMIN ACTIVATION & DEFERRED BACKEND LOADER
         // =========================================================================
         let adminBackendLoaded = false;
 
+        // Instant Password Check -> Immediate UI Show -> Background Lazy Backend Load
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
                 
-                // STEP 1: Direct DOM Switch (Instant Frame Render - 0ms Delay)
+                // STEP 1: 0ms Immediate UI Transition (Zero Lag)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 document.getElementById('customer-page').classList.add('hidden');
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
 
-                // STEP 2: Only Render the Active "Orders" Tab View (Avoid blocking CPU)
-                if (typeof switchAdminTab === 'function') {
-                    switchAdminTab('orders');
-                }
+                // STEP 2: Instant UI Initial Render with Local State
+                if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
+                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
-                // STEP 3: Background Asynchronous Initialization (Completely Non-Blocking)
-                setTimeout(() => {
-                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
-                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
-                    if (typeof resetAdminForm === 'function') resetAdminForm();
+                if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
+                if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+                if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
+                if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
+                if (typeof resetAdminForm === 'function') resetAdminForm();
+                if (typeof switchAdminTab === 'function') switchAdminTab('orders');
 
-                    if (!adminBackendLoaded) {
-                        adminBackendLoaded = true;
+                // STEP 3: Quietly Initialize Admin Backend in Background (Deferred 500ms - 1.5s)
+                if (!adminBackendLoaded) {
+                    adminBackendLoaded = true;
+                    setTimeout(() => {
                         initAdminBackendSuite();
-                    }
-                }, 100);
+                    }, 400);
+                }
             } else {
                 if (typeof showNotification === 'function') {
                     showNotification('Incorrect passcode!', 'warning');
@@ -5654,10 +5643,12 @@
         };
 
         // =========================================================================
-        // 5. DEFERRED ADMIN BACKEND SUITE (Runs after UI is completely painted)
+        // 5. ON-DEMAND ADMIN BACKEND SUITE (Only Runs When Admin Enters Dashboard)
         // =========================================================================
         function initAdminBackendSuite() {
-            // 1. Hydrate CRM Cached Users
+            console.log("⚡ Admin backend loaded & synced in background.");
+
+            // 1. Hydrate cached users locally if available
             try {
                 const cachedUsers = localStorage.getItem('acp_cached_users');
                 if (cachedUsers && typeof registeredUsers !== 'undefined' && registeredUsers.length === 0) {
@@ -5670,7 +5661,7 @@
                 }
             } catch(e){}
 
-            // 2. Admin Writers
+            // 2. Admin Firestore Writers
             window.dbSaveFoodItem = function(item) {
                 if (!item || !item.id) return;
                 setTimeout(() => {
@@ -5715,7 +5706,7 @@
                 }, 0);
             };
 
-            // 3. Admin Listeners (Orders & CRM Users)
+            // 3. Attach Admin Realtime Listeners (Orders & CRM Users)
             db.collection("orders").onSnapshot(
                 { includeMetadataChanges: false },
                 (snapshot) => {
@@ -5727,7 +5718,7 @@
                         if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                     }
                 },
-                (error) => { console.error("Admin Orders:", error.message); }
+                (error) => { console.error("Admin Orders Listener Error:", error.message); }
             );
 
             db.collection("users").onSnapshot(
@@ -5753,10 +5744,10 @@
                         if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                     }
                 },
-                (error) => { console.error("Admin Users:", error.message); }
+                (error) => { console.error("Admin Users Listener Error:", error.message); }
             );
 
-            // 4. Admin CRUD Hooks
+            // 4. Attach Admin Operation Hooks
             const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
             window.handleFoodFormSubmit = function(event) {
                 const editId = document.getElementById('editFoodId')?.value;
