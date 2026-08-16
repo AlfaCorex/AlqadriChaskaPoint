@@ -4766,65 +4766,69 @@
             (error) => { console.error("Firestore Posts:", error.message); }
         );
 
-        // --- INSTANT NON-BLOCKING ADMIN LISTENERS ---
+        // --- INSTANT NON-BLOCKING ADMIN LISTENERS (Lazy Loaded after UI is rendered) ---
         let adminListenersInitialized = false;
 
         window.initAdminBackendListeners = function() {
             if (adminListenersInitialized) return;
             adminListenersInitialized = true;
 
-            // 3. Sync Customer Orders (Admin Only)
-            db.collection("orders").onSnapshot(
-                { includeMetadataChanges: false },
-                (snapshot) => {
-                    const orders = [];
-                    snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
-                    
-                    if (typeof ordersList !== 'undefined') {
-                        ordersList.length = 0;
-                        if (orders.length > 0) {
-                            ordersList.push(...orders);
+            const startAdminSync = () => {
+                // 3. Sync Customer Orders (Admin Only)
+                db.collection("orders").onSnapshot(
+                    { includeMetadataChanges: false },
+                    (snapshot) => {
+                        const orders = [];
+                        snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
+                        
+                        if (typeof ordersList !== 'undefined') {
+                            ordersList.length = 0;
+                            if (orders.length > 0) {
+                                ordersList.push(...orders);
+                            }
+                            if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                         }
-                        if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                    }
-                },
-                (error) => { console.error("Firestore Orders:", error.message); }
-            );
+                    },
+                    (error) => { console.error("Firestore Orders:", error.message); }
+                );
 
-            // 4. Sync Registered Customers (Admin Only - Fixed & Optimized)
-            db.collection("users").onSnapshot(
-                { includeMetadataChanges: false },
-                (snapshot) => {
-                    const users = [];
-                    snapshot.forEach((doc) => { 
-                        let userData = doc.data();
-                        if (userData && !userData.phone && doc.id) {
-                            userData.phone = doc.id;
+                // 4. Sync Registered Customers (Admin Only)
+                db.collection("users").onSnapshot(
+                    { includeMetadataChanges: false },
+                    (snapshot) => {
+                        const users = [];
+                        snapshot.forEach((doc) => { 
+                            let userData = doc.data();
+                            if (userData && !userData.phone && doc.id) {
+                                userData.phone = doc.id;
+                            }
+                            users.push(userData); 
+                        });
+
+                        users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                        if (typeof registeredUsers !== 'undefined') {
+                            registeredUsers.length = 0;
+                            if (users.length > 0) {
+                                registeredUsers.push(...users);
+                                try { localStorage.setItem('acp_cached_users', JSON.stringify(users)); } catch(e){}
+                            }
+                            if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                         }
-                        users.push(userData); 
-                    });
+                    },
+                    (error) => { console.error("Firestore Users:", error.message); }
+                );
+            };
 
-                    users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-                    if (typeof registeredUsers !== 'undefined') {
-                        registeredUsers.length = 0;
-                        if (users.length > 0) {
-                            registeredUsers.push(...users);
-                            try { localStorage.setItem('acp_cached_users', JSON.stringify(users)); } catch(e){}
-                        }
-                        if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
-                    }
-                },
-                (error) => { console.error("Firestore Users:", error.message); }
-            );
+            setTimeout(startAdminSync, 800);
         };
 
-        // Instant Zero-Lag Admin Login Hook
+        // Instant Zero-Lag Admin Login Hook (0ms UI Response)
         const orig_verifyAdminPasscode = window.verifyAdminPasscode;
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
-                // 1. Instant UI switch (zero delay, zero pause)
+                // 1. Instantly hide modal and switch to admin page (Zero Delay)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 
@@ -4832,9 +4836,11 @@
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
                 
+                // 2. Instant Local State Setup
                 if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
                 if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
+                // 3. Instant UI Rendering using local cache/data (0ms delay)
                 if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                 if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
                 if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
@@ -4842,10 +4848,8 @@
                 if (typeof resetAdminForm === 'function') resetAdminForm();
                 if (typeof switchAdminTab === 'function') switchAdminTab('orders');
 
-                // 2. Background data sync initialization (non-blocking)
-                setTimeout(() => {
-                    window.initAdminBackendListeners();
-                }, 10);
+                // 4. Trigger background sync after paint
+                window.initAdminBackendListeners();
             } else {
                 if (orig_verifyAdminPasscode) orig_verifyAdminPasscode();
             }
