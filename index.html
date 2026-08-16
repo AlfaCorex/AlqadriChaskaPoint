@@ -4773,7 +4773,6 @@
             if (adminListenersInitialized) return;
             adminListenersInitialized = true;
 
-            // Use requestIdleCallback or a clean setTimeout so it never blocks admin portal actions
             const startAdminSync = () => {
                 // 3. Sync Customer Orders (Admin Only)
                 db.collection("orders").onSnapshot(
@@ -4821,19 +4820,15 @@
                 );
             };
 
-            if ('requestIdleCallback' in window) {
-                requestIdleCallback(() => startAdminSync(), { timeout: 1500 });
-            } else {
-                setTimeout(startAdminSync, 1200);
-            }
+            setTimeout(startAdminSync, 800);
         };
 
-        // Instant Zero-Lag Admin Login Hook
+        // Instant Zero-Lag Admin Login Hook (0ms UI Response)
         const orig_verifyAdminPasscode = window.verifyAdminPasscode;
         window.verifyAdminPasscode = function() {
             const codeField = document.getElementById('adminPasscode');
             if (codeField && codeField.value === '7574') {
-                // 1. Instantly hide modal and open admin UI (0ms delay)
+                // 1. Instantly hide modal and switch to admin page (Zero Delay)
                 document.getElementById('adminAuthModal').classList.add('hidden');
                 codeField.value = '';
                 
@@ -4841,10 +4836,11 @@
                 document.getElementById('admin-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
                 
-                // 2. Load UI elements instantly using local state
+                // 2. Instant Local State Setup
                 if (typeof workingMenuData !== 'undefined') workingMenuData = JSON.parse(JSON.stringify(menuData));
                 if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
 
+                // 3. Instant UI Rendering using local cache/data (0ms delay)
                 if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                 if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
                 if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
@@ -4852,7 +4848,7 @@
                 if (typeof resetAdminForm === 'function') resetAdminForm();
                 if (typeof switchAdminTab === 'function') switchAdminTab('orders');
 
-                // 3. Trigger backend database sync after the UI is fully stable and rendered
+                // 4. Trigger background sync after paint
                 window.initAdminBackendListeners();
             } else {
                 if (orig_verifyAdminPasscode) orig_verifyAdminPasscode();
