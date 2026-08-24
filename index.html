@@ -389,11 +389,13 @@
             transform: none !important;
         }
 
+        /* Updated to 'contain' with clean white background so PNGs & JPGs fit completely without cropping */
         .card-image-box {
             height: 85px;
-            background-size: cover;
+            background-size: contain;
+            background-repeat: no-repeat;
             background-position: center;
-            background-color: #E2E8F0;
+            background-color: #FFFFFF;
             position: relative;
         }
 
@@ -493,10 +495,12 @@
             transform: none !important;
         }
 
+        /* Updated to 'contain' with clean white background so local food & drink images fit fully */
         .local-mini-card img {
             width: 100%;
             height: 75px;
-            object-fit: cover;
+            object-fit: contain;
+            background-color: #FFFFFF;
             margin: 0 0 2px 0;
             border: none;
             border-radius: 0;
