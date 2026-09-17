@@ -5815,66 +5815,75 @@
         
         const db = firebase.firestore();
 
+        // High-Speed Instant Connection Settings (Bypasses 15-20s stream timeout)
+        try {
+            db.settings({
+                experimentalAutoDetectLongPolling: true,
+                merge: true
+            });
+        } catch(e){}
+
         try {
             db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         } catch(e){}
 
         // =========================================================================
-        // 3. PUBLIC REALTIME LISTENERS (Customer-Facing Menu & Posts)
+        // 3. PUBLIC REALTIME LISTENERS (Instant First-Batch Paint for New Users)
         // =========================================================================
-        db.collection("menu").onSnapshot(
-            { includeMetadataChanges: false },
-            (snapshot) => {
-                const items = [];
-                snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
-                items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
+        const handleIncomingMenu = (snapshot) => {
+            const items = [];
+            snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
+            items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
 
-                if (typeof menuData !== 'undefined') {
-                    menuData.length = 0;
-                    if (items.length > 0) {
-                        menuData.push(...items);
-                        try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
-                    }
-                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
-
-                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                    
-                    const adminPage = document.getElementById('admin-page');
-                    if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminCatalog === 'function') {
-                        renderAdminCatalog();
-                    }
+            if (typeof menuData !== 'undefined') {
+                menuData.length = 0;
+                if (items.length > 0) {
+                    menuData.push(...items);
+                    try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
                 }
-            },
-            (error) => { console.error("Firestore Menu:", error.message); }
-        );
+                if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
 
-        db.collection("posts").onSnapshot(
-            { includeMetadataChanges: false },
-            (snapshot) => {
-                const posts = [];
-                snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
-                posts.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : (b.timestamp || 0) - (a.timestamp || 0));
-
-                if (typeof feedPosts !== 'undefined') {
-                    feedPosts.length = 0;
-                    if (posts.length > 0) {
-                        feedPosts.push(...posts);
-                        try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
-                    }
-                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
-
-                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-                    
-                    const adminPage = document.getElementById('admin-page');
-                    if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminPostsList === 'function') {
-                        renderAdminPostsList();
-                    }
+                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                if (typeof hideAppPreloader === 'function') hideAppPreloader();
+                
+                const adminPage = document.getElementById('admin-page');
+                if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminCatalog === 'function') {
+                    renderAdminCatalog();
                 }
-            },
-            (error) => { console.error("Firestore Posts:", error.message); }
-        );
+            }
+        };
+
+        db.collection("menu").onSnapshot({ includeMetadataChanges: false }, handleIncomingMenu, (error) => {
+            console.error("Firestore Menu:", error.message);
+        });
+
+        const handleIncomingPosts = (snapshot) => {
+            const posts = [];
+            snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
+            posts.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : (b.timestamp || 0) - (a.timestamp || 0));
+
+            if (typeof feedPosts !== 'undefined') {
+                feedPosts.length = 0;
+                if (posts.length > 0) {
+                    feedPosts.push(...posts);
+                    try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
+                }
+                if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+
+                if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                
+                const adminPage = document.getElementById('admin-page');
+                if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminPostsList === 'function') {
+                    renderAdminPostsList();
+                }
+            }
+        };
+
+        db.collection("posts").onSnapshot({ includeMetadataChanges: false }, handleIncomingPosts, (error) => {
+            console.error("Firestore Posts:", error.message);
+        });
 
         // =========================================================================
         // 4. PUBLIC ACTION WRITERS (Orders, Users, & Social Feed Interactions)
@@ -5949,7 +5958,7 @@
             }
         };
 
-        // Public Social Feed Interactions (Saves Likes and Comments to Firestore for all users)
+        // Public Social Feed Interactions
         const orig_submitComment = window.submitComment;
         window.submitComment = function(id) {
             if (orig_submitComment) orig_submitComment(id);
@@ -6242,7 +6251,6 @@
                 showNotification(post.isHidden ? 'Post hidden from social feed.' : 'Post is now visible on social feed.');
             };
 
-            // Comprehensive Post Deletion for Admin
             const orig_deleteFeedPost = window.deleteFeedPost;
             window.deleteFeedPost = function(postId) {
                 if (orig_deleteFeedPost) orig_deleteFeedPost(postId);
