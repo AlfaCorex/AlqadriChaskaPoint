@@ -5445,64 +5445,8 @@
         "use strict";
 
         // =========================================================================
-        // 1. DATA SANITIZATION HELPER (Prevents Firestore crashes on undefined)
+        // 1. FAST DOM PAINTERS (Optimized with single-paint fragment insertion)
         // =========================================================================
-        function sanitizeForFirestore(obj) {
-            return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
-        }
-
-        // =========================================================================
-        // 2. ULTRA-FAST FIREBASE INITIALIZATION (No IndexedDB Lock Delays)
-        // =========================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyAU3wBPK_iKzH-F0qfRp9KFG4Keq8tmm2U",
-            authDomain: "alfa-corex-1-c9856.firebaseapp.com",
-            projectId: "alfa-corex-1-c9856",
-            storageBucket: "alfa-corex-1-c9856.firebasestorage.app",
-            messagingSenderId: "685367477889",
-            appId: "1:685367477889:web:f83b7028683df4fdc96f80",
-            measurementId: "G-ZKPVH2RPW5"
-        };
-
-        if (typeof firebase === 'undefined') return;
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        
-        const db = firebase.firestore();
-
-        // High-Speed Network Setting (Disabled tab-sync lock which causes 30-40s delay)
-        try {
-            db.settings({
-                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-                merge: true
-            });
-        } catch(e) {}
-
-        // Immediate preloader dismiss safety timer for first-time visitors (Max 1.2 seconds)
-        setTimeout(() => {
-            if (typeof window.hideAppPreloader === 'function') {
-                window.hideAppPreloader();
-            }
-        }, 1200);
-
-        // =========================================================================
-        // 3. FAST SINGLE-PAINT DOM RENDERERS
-        // =========================================================================
-        window.hideAppPreloader = function() {
-            const preloader = document.getElementById('appPreloader');
-            if (preloader) {
-                preloader.style.opacity = '0';
-                preloader.style.pointerEvents = 'none';
-                setTimeout(() => {
-                    if (preloader && preloader.parentNode) {
-                        preloader.parentNode.removeChild(preloader);
-                    }
-                }, 200);
-            }
-        };
-
         window.renderCustomerMenu = function() {
             const container = document.getElementById('menuGridContainer');
             if (!container) return;
@@ -5530,7 +5474,7 @@
                 html += `
                     <div class="portrait-card relative ${cardOutline}" id="customer-card-${item.id}">
                         ${checkBadge}
-                        <div class="card-image-box" style="background-image: url('${item.image || ''}');"></div>
+                        <div class="card-image-box" style="background-image: url('${item.image}');"></div>
                         <div class="card-info-box">
                             <div class="text-center space-y-0">
                                 <h3 class="card-title-compact !mb-0" title="${item.name}">${item.name}</h3>
@@ -5575,7 +5519,7 @@
                 html += `
                     <div class="local-mini-card relative ${cardOutline}" id="local-card-${item.id}">
                         ${checkBadge}
-                        <img src="${item.image || ''}" decoding="async" loading="lazy" alt="${item.name}" onerror="this.src='https://placehold.co/100x60/FF5A36/ffffff?text=ACP'">
+                        <img src="${item.image}" decoding="async" loading="lazy" alt="${item.name}" onerror="this.src='https://placehold.co/100x60/FF5A36/ffffff?text=ACP'">
                         <div class="text-center space-y-0 w-full">
                             <h3 class="local-title-compact !mb-0">${item.name}</h3>
                             <div class="local-price-compact !mb-0 !mt-0">Rs. ${item.price}</div>
@@ -5621,7 +5565,7 @@
                 html += `
                     <div class="local-mini-card relative ${cardOutline}" id="drink-card-${item.id}">
                         ${checkBadge}
-                        <img src="${item.image || ''}" decoding="async" loading="lazy" alt="${item.name}" onerror="this.src='https://placehold.co/100x60/FF5A36/ffffff?text=ACP'">
+                        <img src="${item.image}" decoding="async" loading="lazy" alt="${item.name}" onerror="this.src='https://placehold.co/100x60/FF5A36/ffffff?text=ACP'">
                         <div class="text-center space-y-0 w-full">
                             <h3 class="local-title-compact !mb-0">${item.name}</h3>
                             <div class="local-price-compact !mb-0 !mt-0">Rs. ${item.price}</div>
@@ -5635,6 +5579,14 @@
                 `;
             }
             container.innerHTML = html;
+        };
+
+        window.hideAppPreloader = function() {
+            const preloader = document.getElementById('appPreloader');
+            if (preloader) {
+                preloader.style.display = 'none';
+                preloader.remove();
+            }
         };
 
         window.renderAdminCatalog = function() {
@@ -5683,7 +5635,7 @@
                     <tr class="hover:bg-slate-50 transition-all text-center">
                         <td class="p-2 align-middle">
                             <div class="flex flex-col items-center justify-center">
-                                <img src="${item.image || ''}" decoding="async" loading="lazy" class="w-8 h-8 rounded-md object-cover border border-slate-200 mb-1" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
+                                <img src="${item.image}" decoding="async" loading="lazy" class="w-8 h-8 rounded-md object-cover border border-slate-200 mb-1" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
                                 <div class="font-bold text-slate-900 text-[10.5px] truncate max-w-[120px] leading-tight" title="${item.name}">${item.name}</div>
                                 <div class="mt-0.5">${categoryBadge}</div>
                                 <div class="flex items-center justify-center gap-2.5 mt-1 text-sm">
@@ -5746,6 +5698,7 @@
                 const totalComments = getTotalCommentsCount(post);
                 const isHidden = post.isHidden === true;
                 
+                // Explicit Hide / Show text with icons matching requirement
                 const hideShowText = isHidden ? 'Hide' : 'Show';
                 const hideShowColor = isHidden ? 'text-rose-500 hover:text-rose-700' : 'text-emerald-600 hover:text-emerald-700';
                 const hideShowIcon = isHidden ? 'fa-eye-slash text-rose-500' : 'fa-eye text-emerald-600';
@@ -5754,7 +5707,7 @@
                 postsHtml += `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
                         <div class="flex gap-2.5 items-start">
-                            <img src="${post.image || ''}" decoding="async" loading="lazy" class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
+                            <img src="${post.image}" decoding="async" loading="lazy" class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" onerror="this.src='https://placehold.co/100x100/FF5A36/ffffff?text=ACP'">
                             <div class="space-y-0.5 flex-1">
                                 <h4 class="text-xs font-black text-slate-900 line-clamp-1">${post.title}</h4>
                                 <p class="text-[9px] text-slate-505 line-clamp-2 leading-tight whitespace-pre-line">${post.desc}</p>
@@ -5763,7 +5716,7 @@
 
                         <div class="flex items-center justify-between text-[10px] font-bold pt-1.5 border-t border-slate-200 text-slate-600">
                             <span class="text-rose-505 flex items-center gap-1">
-                                <i class="fa-solid fa-heart text-rose-500"></i> ${post.likes || 0} Likes
+                                <i class="fa-solid fa-heart text-rose-500"></i> ${post.likes} Likes
                             </span>
                             <span class="text-sky-605 flex items-center gap-1 font-extrabold">
                                 <i class="fa-regular fa-comment"></i> ${totalComments} Comments
@@ -5805,128 +5758,133 @@
         };
 
         // =========================================================================
-        // 4. GLOBAL DATABASE OPERATIONS (Available for Customers & Admin alike)
+        // 2. INSTANT CACHE HYDRATION (Microsecond Initial Paint)
         // =========================================================================
-        window.dbSavePost = function(post) {
-            if (!post || !post.id) return;
-            const safePost = sanitizeForFirestore(post);
-            db.collection("posts").doc(String(post.id)).set(safePost, { merge: true }).catch(console.error);
+        try {
+            const cachedMenu = localStorage.getItem('acp_cached_menu');
+            const cachedPosts = localStorage.getItem('acp_cached_posts');
+
+            if (cachedMenu && typeof menuData !== 'undefined' && menuData.length === 0) {
+                const parsedMenu = JSON.parse(cachedMenu);
+                if (Array.isArray(parsedMenu) && parsedMenu.length > 0) {
+                    menuData.length = 0;
+                    menuData.push(...parsedMenu);
+                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                }
+            }
+
+            if (cachedPosts && typeof feedPosts !== 'undefined' && feedPosts.length === 0) {
+                const parsedPosts = JSON.parse(cachedPosts);
+                if (Array.isArray(parsedPosts) && parsedPosts.length > 0) {
+                    feedPosts.length = 0;
+                    feedPosts.push(...parsedPosts);
+                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                }
+            }
+        } catch(e) {
+            console.warn("Public hydration skip:", e);
+        }
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAU3wBPK_iKzH-F0qfRp9KFG4Keq8tmm2U",
+            authDomain: "alfa-corex-1-c9856.firebaseapp.com",
+            projectId: "alfa-corex-1-c9856",
+            storageBucket: "alfa-corex-1-c9856.firebasestorage.app",
+            messagingSenderId: "685367477889",
+            appId: "1:685367477889:web:f83b7028683df4fdc96f80",
+            measurementId: "G-ZKPVH2RPW5"
         };
 
-        window.dbDeletePost = function(id) {
-            if (!id) return;
-            db.collection("posts").doc(String(id)).delete().catch(console.error);
-        };
+        if (typeof firebase === 'undefined') return;
 
-        window.dbSaveFoodItem = function(item) {
-            if (!item || !item.id) return;
-            const safeItem = sanitizeForFirestore(item);
-            db.collection("menu").doc(String(item.id)).set(safeItem, { merge: true }).catch(console.error);
-        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        const db = firebase.firestore();
 
-        window.dbDeleteFoodItem = function(id) {
-            if (!id) return;
-            db.collection("menu").doc(String(id)).delete().catch(console.error);
-        };
+        try {
+            db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+        } catch(e){}
 
+        // =========================================================================
+        // 3. PUBLIC REALTIME LISTENERS (Only Customer-Facing Menu & Posts)
+        // =========================================================================
+        db.collection("menu").onSnapshot(
+            { includeMetadataChanges: false },
+            (snapshot) => {
+                const items = [];
+                snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
+                items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
+
+                if (typeof menuData !== 'undefined') {
+                    menuData.length = 0;
+                    if (items.length > 0) {
+                        menuData.push(...items);
+                        try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
+                    }
+                    if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
+
+                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
+                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                    
+                    const adminPage = document.getElementById('admin-page');
+                    if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminCatalog === 'function') {
+                        renderAdminCatalog();
+                    }
+                }
+            },
+            (error) => { console.error("Firestore Menu:", error.message); }
+        );
+
+        db.collection("posts").onSnapshot(
+            { includeMetadataChanges: false },
+            (snapshot) => {
+                const posts = [];
+                snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
+                posts.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : (b.timestamp || 0) - (a.timestamp || 0));
+
+                if (typeof feedPosts !== 'undefined') {
+                    feedPosts.length = 0;
+                    if (posts.length > 0) {
+                        feedPosts.push(...posts);
+                        try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
+                    }
+                    if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+
+                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
+                    
+                    const adminPage = document.getElementById('admin-page');
+                    if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminPostsList === 'function') {
+                        renderAdminPostsList();
+                    }
+                }
+            },
+            (error) => { console.error("Firestore Posts:", error.message); }
+        );
+
+        // =========================================================================
+        // 4. PUBLIC ACTION WRITERS (Orders & User Registrations)
+        // =========================================================================
         window.dbSaveOrder = function(order) {
             if (!order || !order.id) return;
-            const cleanId = String(order.id).replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-            const safeOrder = sanitizeForFirestore(order);
-            db.collection("orders").doc(cleanId).set(safeOrder, { merge: true }).catch(console.error);
-        };
-
-        window.dbDeleteOrder = function(orderId) {
-            if (!orderId) return;
-            const cleanId = String(orderId).replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-            db.collection("orders").doc(cleanId).delete().catch(console.error);
+            const cleanId = order.id.replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
+            setTimeout(() => {
+                db.collection("orders").doc(cleanId).set(order, { merge: true }).catch(console.error);
+            }, 0);
         };
 
         window.dbSaveUser = function(user) {
             if (!user || !user.phone) return;
             if (!user.timestamp) user.timestamp = Date.now();
-            const cleanId = String(user.phone).replace(/[^0-9]/g, '') || Date.now().toString();
-            const safeUser = sanitizeForFirestore(user);
-            db.collection("users").doc(cleanId).set(safeUser, { merge: true }).catch(console.error);
-        };
-
-        window.dbDeleteUser = function(phone) {
-            if (!phone) return;
-            const cleanId = String(phone).replace(/[^0-9]/g, '');
-            db.collection("users").doc(cleanId).delete().catch(console.error);
-        };
-
-        // =========================================================================
-        // 5. ATTACH REAL-TIME FIRESTORE HOOKS FOR CUSTOMERS (Likes/Comments/Feeds)
-        // =========================================================================
-        const orig_submitComment = window.submitComment;
-        window.submitComment = function(id) {
-            if (orig_submitComment) orig_submitComment(id);
-            const post = feedPosts.find(p => p.id === id);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_likePost = window.likePost;
-        window.likePost = function(id) {
-            if (orig_likePost) orig_likePost(id);
-            const post = feedPosts.find(p => p.id === id);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_likeComment = window.likeComment;
-        window.likeComment = function(postId, commentIndex) {
-            if (orig_likeComment) orig_likeComment(postId, commentIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_dislikeComment = window.dislikeComment;
-        window.dislikeComment = function(postId, commentIndex) {
-            if (orig_dislikeComment) orig_dislikeComment(postId, commentIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_likeReply = window.likeReply;
-        window.likeReply = function(postId, commentIndex, replyIndex) {
-            if (orig_likeReply) orig_likeReply(postId, commentIndex, replyIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_dislikeReply = window.dislikeReply;
-        window.dislikeReply = function(postId, commentIndex, replyIndex) {
-            if (orig_dislikeReply) orig_dislikeReply(postId, commentIndex, replyIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_deleteComment = window.deleteComment;
-        window.deleteComment = function(postId, commentIndex) {
-            if (orig_deleteComment) orig_deleteComment(postId, commentIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_deleteReply = window.deleteReply;
-        window.deleteReply = function(postId, commentIndex, replyIndex) {
-            if (orig_deleteReply) orig_deleteReply(postId, commentIndex, replyIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_saveEditComment = window.saveEditComment;
-        window.saveEditComment = function(postId, commentIndex) {
-            if (orig_saveEditComment) orig_saveEditComment(postId, commentIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
-        };
-
-        const orig_saveEditReply = window.saveEditReply;
-        window.saveEditReply = function(postId, commentIndex, replyIndex) {
-            if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
-            const post = feedPosts.find(p => p.id === postId);
-            if (post) window.dbSavePost(post);
+            const cleanId = user.phone.replace(/[^0-9]/g, '') || Date.now().toString();
+            setTimeout(() => {
+                db.collection("users").doc(cleanId).set(user, { merge: true }).catch(console.error);
+            }, 0);
         };
 
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
@@ -5947,266 +5905,338 @@
         };
 
         // =========================================================================
-        // 6. REALTIME PUBLIC LISTENERS (Instant Network Direct)
+        // 5. LIGHTNING-FAST 0ms ADMIN PORTAL SWITCH
         // =========================================================================
-        db.collection("menu").onSnapshot(
-            (snapshot) => {
-                const items = [];
-                snapshot.forEach((doc) => { 
-                    const data = doc.data();
-                    if (data) {
-                        data.id = Number(data.id || doc.id);
-                        items.push(data);
-                    }
-                });
-                items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
+        let adminBackendLoaded = false;
 
-                if (typeof menuData !== 'undefined') {
-                    menuData.length = 0;
-                    if (items.length > 0) {
-                        menuData.push(...items);
-                        try { localStorage.setItem('acp_cached_menu', JSON.stringify(items)); } catch(e){}
-                    }
+        window.verifyAdminPasscode = function() {
+            const codeField = document.getElementById('adminPasscode');
+            if (codeField && codeField.value === '7574') {
+                
+                document.getElementById('adminAuthModal').classList.add('hidden');
+                codeField.value = '';
+                document.getElementById('customer-page').classList.add('hidden');
+                document.getElementById('admin-page').classList.remove('hidden');
+                window.scrollTo(0, 0);
+
+                if (typeof switchAdminTab === 'function') {
+                    switchAdminTab('orders');
+                }
+
+                setTimeout(() => {
                     if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
-
-                    if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
-                    if (typeof renderLocalMenu === 'function') renderLocalMenu();
-                    if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
-                    window.hideAppPreloader();
-
-                    const adminPage = document.getElementById('admin-page');
-                    if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminCatalog === 'function') {
-                        renderAdminCatalog();
-                    }
-                }
-            },
-            (error) => { 
-                console.error("Firestore Menu error:", error);
-                window.hideAppPreloader();
-            }
-        );
-
-        db.collection("posts").onSnapshot(
-            (snapshot) => {
-                const posts = [];
-                snapshot.forEach((doc) => { 
-                    const data = doc.data();
-                    if (data) {
-                        data.id = Number(data.id || doc.id);
-                        if (!data.comments) data.comments = [];
-                        if (!data.likedUsers) data.likedUsers = [];
-                        posts.push(data);
-                    }
-                });
-                posts.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : (b.timestamp || 0) - (a.timestamp || 0));
-
-                if (typeof feedPosts !== 'undefined') {
-                    feedPosts.length = 0;
-                    if (posts.length > 0) {
-                        feedPosts.push(...posts);
-                        try { localStorage.setItem('acp_cached_posts', JSON.stringify(posts)); } catch(e){}
-                    }
                     if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
+                    if (typeof resetAdminForm === 'function') resetAdminForm();
 
-                    if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-
-                    const adminPage = document.getElementById('admin-page');
-                    if (adminPage && !adminPage.classList.contains('hidden') && typeof renderAdminPostsList === 'function') {
-                        renderAdminPostsList();
+                    if (!adminBackendLoaded) {
+                        adminBackendLoaded = true;
+                        initAdminBackendSuite();
                     }
+                }, 80);
+            } else {
+                if (typeof showNotification === 'function') {
+                    showNotification('Incorrect passcode!', 'warning');
+                } else {
+                    alert('Incorrect passcode!');
                 }
-            },
-            (error) => { console.error("Firestore Posts error:", error); }
-        );
-
-        // =========================================================================
-        // 7. ADMIN DASHBOARD SYNC (Fixed Post Deletion, Catalog Sync, Orders & Users)
-        // =========================================================================
-        window.confirmDeletePost = function() {
-            const postIdInput = document.getElementById('pendingDeletePostId');
-            if (!postIdInput) return;
-            const postId = parseInt(postIdInput.value);
-            if (!postId) return;
-
-            feedPosts = feedPosts.filter(p => p.id !== postId);
-            workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-
-            window.dbDeletePost(postId);
-
-            if (typeof cancelDeletePost === 'function') cancelDeletePost();
-            if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-            if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-            if (typeof showNotification === 'function') showNotification('Post deleted from database successfully!', 'warning');
-        };
-
-        window.deleteFeedPost = function(postId) {
-            feedPosts = feedPosts.filter(p => p.id !== postId);
-            workingFeedPosts = JSON.parse(JSON.stringify(feedPosts));
-            window.dbDeletePost(postId);
-            if (typeof renderAdminPostsList === 'function') renderAdminPostsList();
-            if (typeof renderCustomerSocialFeeds === 'function') renderCustomerSocialFeeds();
-            if (typeof showNotification === 'function') showNotification('Post deleted from database!', 'warning');
-        };
-
-        window.togglePostHide = function(id) {
-            const post = workingFeedPosts.find(p => p.id === id);
-            if (!post) return;
-            post.isHidden = !post.isHidden;
-
-            const mainPost = feedPosts.find(p => p.id === id);
-            if (mainPost) mainPost.isHidden = post.isHidden;
-
-            window.renderAdminPostsList();
-            window.dbSavePost(post);
-            if (typeof showNotification === 'function') {
-                showNotification(post.isHidden ? 'Post hidden from social feed.' : 'Post is now visible on social feed.');
+                if (codeField) {
+                    codeField.value = '';
+                    codeField.focus();
+                }
             }
         };
 
-        window.toggleCatalogItemHide = function(id) {
-            const item = workingMenuData.find(x => x.id === id);
-            if (!item) return;
-            item.isHidden = !item.isHidden;
+        // =========================================================================
+        // 6. DEFERRED ADMIN BACKEND SUITE (Ultra Fast Background Sync)
+        // =========================================================================
+        function initAdminBackendSuite() {
+            try {
+                const cachedUsers = localStorage.getItem('acp_cached_users');
+                if (cachedUsers && typeof registeredUsers !== 'undefined' && registeredUsers.length === 0) {
+                    const parsedUsers = JSON.parse(cachedUsers);
+                    if (Array.isArray(parsedUsers) && parsedUsers.length > 0) {
+                        registeredUsers.length = 0;
+                        registeredUsers.push(...parsedUsers);
+                        if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
+                    }
+                }
+            } catch(e){}
 
-            const mainItem = menuData.find(x => x.id === id);
-            if (mainItem) mainItem.isHidden = item.isHidden;
+            window.dbSaveFoodItem = function(item) {
+                if (!item || !item.id) return;
+                setTimeout(() => {
+                    db.collection("menu").doc(item.id.toString()).set(item, { merge: true }).catch(console.error);
+                }, 0);
+            };
 
-            window.renderAdminCatalog();
-            window.dbSaveFoodItem(item);
-            if (typeof showNotification === 'function') {
+            window.dbDeleteFoodItem = function(id) {
+                if (!id) return;
+                setTimeout(() => {
+                    db.collection("menu").doc(id.toString()).delete().catch(console.error);
+                }, 0);
+            };
+
+            window.dbSavePost = function(post) {
+                if (!post || !post.id) return;
+                setTimeout(() => {
+                    db.collection("posts").doc(post.id.toString()).set(post, { merge: true }).catch(console.error);
+                }, 0);
+            };
+
+            window.dbDeletePost = function(id) {
+                if (!id) return;
+                setTimeout(() => {
+                    db.collection("posts").doc(id.toString()).delete().catch(console.error);
+                }, 0);
+            };
+
+            window.dbDeleteOrder = function(orderId) {
+                if (!orderId) return;
+                const cleanId = orderId.replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
+                setTimeout(() => {
+                    db.collection("orders").doc(cleanId).delete().catch(console.error);
+                }, 0);
+            };
+
+            window.dbDeleteUser = function(phone) {
+                if (!phone) return;
+                const cleanId = phone.replace(/[^0-9]/g, '');
+                setTimeout(() => {
+                    db.collection("users").doc(cleanId).delete().catch(console.error);
+                }, 0);
+            };
+
+            db.collection("orders").onSnapshot(
+                { includeMetadataChanges: false },
+                (snapshot) => {
+                    const orders = [];
+                    snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
+                    if (typeof ordersList !== 'undefined') {
+                        ordersList.length = 0;
+                        if (orders.length > 0) ordersList.push(...orders);
+                        if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
+                    }
+                },
+                (error) => { console.error("Admin Orders:", error.message); }
+            );
+
+            db.collection("users").onSnapshot(
+                { includeMetadataChanges: false },
+                (snapshot) => {
+                    const users = [];
+                    snapshot.forEach((doc) => { 
+                        let userData = doc.data();
+                        if (userData && !userData.phone && doc.id) {
+                            userData.phone = doc.id;
+                        }
+                        users.push(userData); 
+                    });
+
+                    users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                    if (typeof registeredUsers !== 'undefined') {
+                        registeredUsers.length = 0;
+                        if (users.length > 0) {
+                            registeredUsers.push(...users);
+                            try { localStorage.setItem('acp_cached_users', JSON.stringify(users)); } catch(e){}
+                        }
+                        if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
+                    }
+                },
+                (error) => { console.error("Admin Users:", error.message); }
+            );
+
+            const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
+            window.handleFoodFormSubmit = function(event) {
+                const editId = document.getElementById('editFoodId')?.value;
+                if (orig_handleFoodFormSubmit) orig_handleFoodFormSubmit(event);
+                if (typeof menuData !== 'undefined' && menuData.length > 0) {
+                    const target = editId ? menuData.find(x => x.id == editId) : menuData[menuData.length - 1];
+                    if (target) {
+                        if (target.order === undefined) target.order = menuData.indexOf(target);
+                        window.dbSaveFoodItem(target);
+                    }
+                }
+            };
+
+            const orig_saveCatalogOrderChanges = window.saveCatalogOrderChanges;
+            window.saveCatalogOrderChanges = function() {
+                if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
+                if (typeof menuData !== 'undefined' && menuData.length > 0) {
+                    menuData.forEach((item, idx) => {
+                        item.order = idx;
+                        window.dbSaveFoodItem(item);
+                    });
+                }
+            };
+
+            window.toggleCatalogItemHide = function(id) {
+                const item = workingMenuData.find(x => x.id === id);
+                if (!item) return;
+                item.isHidden = !item.isHidden;
+
+                const mainItem = menuData.find(x => x.id === id);
+                if (mainItem) mainItem.isHidden = item.isHidden;
+
+                window.renderAdminCatalog();
+                window.dbSaveFoodItem(item);
                 showNotification(item.isHidden ? 'Product hidden from customer view.' : 'Product is now visible on customer view.');
-            }
-        };
+            };
 
-        window.toggleCatalogItemAvailability = function(id) {
-            const item = workingMenuData.find(x => x.id === id);
-            if (!item) return;
-            if (item.isAvailable === undefined) item.isAvailable = true;
-            item.isAvailable = !item.isAvailable;
+            window.toggleCatalogItemAvailability = function(id) {
+                const item = workingMenuData.find(x => x.id === id);
+                if (!item) return;
+                if (item.isAvailable === undefined) item.isAvailable = true;
+                item.isAvailable = !item.isAvailable;
 
-            const mainItem = menuData.find(x => x.id === id);
-            if (mainItem) mainItem.isAvailable = item.isAvailable;
+                const mainItem = menuData.find(x => x.id === id);
+                if (mainItem) mainItem.isAvailable = item.isAvailable;
 
-            window.renderAdminCatalog();
-            window.dbSaveFoodItem(item);
-            if (typeof showNotification === 'function') {
+                window.renderAdminCatalog();
+                window.dbSaveFoodItem(item);
                 showNotification(item.isAvailable ? 'Product marked as Available.' : 'Product marked as Not Available.');
-            }
-        };
+            };
 
-        const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
-        window.handleFoodFormSubmit = function(event) {
-            const editId = document.getElementById('editFoodId')?.value;
-            if (orig_handleFoodFormSubmit) orig_handleFoodFormSubmit(event);
-            if (typeof menuData !== 'undefined' && menuData.length > 0) {
-                const target = editId ? menuData.find(x => x.id == editId) : menuData[menuData.length - 1];
-                if (target) {
-                    if (target.order === undefined) target.order = menuData.indexOf(target);
-                    window.dbSaveFoodItem(target);
-                }
-            }
-        };
+            const orig_deleteFoodCatalog = window.deleteFoodCatalog;
+            window.deleteFoodCatalog = function(id) {
+                if (orig_deleteFoodCatalog) orig_deleteFoodCatalog(id);
+                window.dbDeleteFoodItem(id);
+            };
 
-        const orig_saveCatalogOrderChanges = window.saveCatalogOrderChanges;
-        window.saveCatalogOrderChanges = function() {
-            if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
-            if (typeof menuData !== 'undefined' && menuData.length > 0) {
-                menuData.forEach((item, idx) => {
-                    item.order = idx;
-                    window.dbSaveFoodItem(item);
-                });
-            }
-        };
-
-        const orig_deleteFoodCatalog = window.deleteFoodCatalog;
-        window.deleteFoodCatalog = function(id) {
-            if (orig_deleteFoodCatalog) orig_deleteFoodCatalog(id);
-            window.dbDeleteFoodItem(id);
-        };
-
-        const orig_handleFeedPostSubmit = window.handleFeedPostSubmit;
-        window.handleFeedPostSubmit = function(event) {
-            const editId = document.getElementById('editPostId')?.value;
-            if (orig_handleFeedPostSubmit) orig_handleFeedPostSubmit(event);
-            if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
-                const target = editId ? feedPosts.find(p => p.id == editId) : feedPosts[0];
-                if (target) {
-                    if (target.order === undefined) target.order = feedPosts.indexOf(target);
-                    window.dbSavePost(target);
-                }
-            }
-        };
-
-        const orig_savePostOrderChanges = window.savePostOrderChanges;
-        window.savePostOrderChanges = function() {
-            if (orig_savePostOrderChanges) orig_savePostOrderChanges();
-            if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
-                feedPosts.forEach((post, idx) => {
-                    post.order = idx;
-                    window.dbSavePost(post);
-                });
-            }
-        };
-
-        const orig_approveAdminOrder = window.approveAdminOrder;
-        window.approveAdminOrder = function(index) {
-            if (orig_approveAdminOrder) orig_approveAdminOrder(index);
-            if (typeof ordersList !== 'undefined' && ordersList[index]) {
-                window.dbSaveOrder(ordersList[index]);
-            }
-        };
-
-        const orig_removeAdminOrder = window.removeAdminOrder;
-        window.removeAdminOrder = function(index) {
-            const ord = (typeof ordersList !== 'undefined') ? ordersList[index] : null;
-            if (orig_removeAdminOrder) orig_removeAdminOrder(index);
-            if (ord && ord.id) window.dbDeleteOrder(ord.id);
-        };
-
-        const orig_removeCustomerRecord = window.removeCustomerRecord;
-        window.removeCustomerRecord = function(idx) {
-            const user = (typeof registeredUsers !== 'undefined') ? registeredUsers[idx] : null;
-            if (orig_removeCustomerRecord) orig_removeCustomerRecord(idx);
-            if (user && user.phone) window.dbDeleteUser(user.phone);
-        };
-
-        // Realtime Orders & CRM Listeners for Admin Dashboard
-        db.collection("orders").onSnapshot(
-            (snapshot) => {
-                const orders = [];
-                snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
-                if (typeof ordersList !== 'undefined') {
-                    ordersList.length = 0;
-                    if (orders.length > 0) ordersList.push(...orders);
-                    if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
-                }
-            },
-            (error) => { console.error("Admin Orders Listener error:", error); }
-        );
-
-        db.collection("users").onSnapshot(
-            (snapshot) => {
-                const users = [];
-                snapshot.forEach((doc) => { 
-                    let userData = doc.data();
-                    if (userData && !userData.phone && doc.id) {
-                        userData.phone = doc.id;
+            const orig_handleFeedPostSubmit = window.handleFeedPostSubmit;
+            window.handleFeedPostSubmit = function(event) {
+                const editId = document.getElementById('editPostId')?.value;
+                if (orig_handleFeedPostSubmit) orig_handleFeedPostSubmit(event);
+                if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
+                    const target = editId ? feedPosts.find(p => p.id == editId) : feedPosts[0];
+                    if (target) {
+                        if (target.order === undefined) target.order = feedPosts.indexOf(target);
+                        window.dbSavePost(target);
                     }
-                    users.push(userData); 
-                });
-
-                users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-                if (typeof registeredUsers !== 'undefined') {
-                    registeredUsers.length = 0;
-                    if (users.length > 0) {
-                        registeredUsers.push(...users);
-                        try { localStorage.setItem('acp_cached_users', JSON.stringify(users)); } catch(e){}
-                    }
-                    if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                 }
-            },
-            (error) => { console.error("Admin Users Listener error:", error); }
-        );
+            };
+
+            const orig_savePostOrderChanges = window.savePostOrderChanges;
+            window.savePostOrderChanges = function() {
+                if (orig_savePostOrderChanges) orig_savePostOrderChanges();
+                if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
+                    feedPosts.forEach((post, idx) => {
+                        post.order = idx;
+                        window.dbSavePost(post);
+                    });
+                }
+            };
+
+            window.togglePostHide = function(id) {
+                const post = workingFeedPosts.find(p => p.id === id);
+                if (!post) return;
+                post.isHidden = !post.isHidden;
+
+                const mainPost = feedPosts.find(p => p.id === id);
+                if (mainPost) mainPost.isHidden = post.isHidden;
+
+                window.renderAdminPostsList();
+                window.dbSavePost(post);
+                showNotification(post.isHidden ? 'Post hidden from social feed.' : 'Post is now visible on social feed.');
+            };
+
+            const orig_deleteFeedPost = window.deleteFeedPost;
+            window.deleteFeedPost = function(postId) {
+                if (orig_deleteFeedPost) orig_deleteFeedPost(postId);
+                window.dbDeletePost(postId);
+            };
+
+            const orig_submitComment = window.submitComment;
+            window.submitComment = function(id) {
+                if (orig_submitComment) orig_submitComment(id);
+                const post = feedPosts.find(p => p.id === id);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_likePost = window.likePost;
+            window.likePost = function(id) {
+                if (orig_likePost) orig_likePost(id);
+                const post = feedPosts.find(p => p.id === id);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_likeComment = window.likeComment;
+            window.likeComment = function(postId, commentIndex) {
+                if (orig_likeComment) orig_likeComment(postId, commentIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_dislikeComment = window.dislikeComment;
+            window.dislikeComment = function(postId, commentIndex) {
+                if (orig_dislikeComment) orig_dislikeComment(postId, commentIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_likeReply = window.likeReply;
+            window.likeReply = function(postId, commentIndex, replyIndex) {
+                if (orig_likeReply) orig_likeReply(postId, commentIndex, replyIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_dislikeReply = window.dislikeReply;
+            window.dislikeReply = function(postId, commentIndex, replyIndex) {
+                if (orig_dislikeReply) orig_dislikeReply(postId, commentIndex, replyIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_deleteComment = window.deleteComment;
+            window.deleteComment = function(postId, commentIndex) {
+                if (orig_deleteComment) orig_deleteComment(postId, commentIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_deleteReply = window.deleteReply;
+            window.deleteReply = function(postId, commentIndex, replyIndex) {
+                if (orig_deleteReply) orig_deleteReply(postId, commentIndex, replyIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_saveEditComment = window.saveEditComment;
+            window.saveEditComment = function(postId, commentIndex) {
+                if (orig_saveEditComment) orig_saveEditComment(postId, commentIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_saveEditReply = window.saveEditReply;
+            window.saveEditReply = function(postId, commentIndex, replyIndex) {
+                if (orig_saveEditReply) orig_saveEditReply(postId, commentIndex, replyIndex);
+                const post = feedPosts.find(p => p.id === postId);
+                if (post) window.dbSavePost(post);
+            };
+
+            const orig_approveAdminOrder = window.approveAdminOrder;
+            window.approveAdminOrder = function(index) {
+                if (orig_approveAdminOrder) orig_approveAdminOrder(index);
+                if (typeof ordersList !== 'undefined' && ordersList[index]) {
+                    window.dbSaveOrder(ordersList[index]);
+                }
+            };
+
+            const orig_removeAdminOrder = window.removeAdminOrder;
+            window.removeAdminOrder = function(index) {
+                const ord = (typeof ordersList !== 'undefined') ? ordersList[index] : null;
+                if (orig_removeAdminOrder) orig_removeAdminOrder(index);
+                if (ord && ord.id) window.dbDeleteOrder(ord.id);
+            };
+
+            const orig_removeCustomerRecord = window.removeCustomerRecord;
+            window.removeCustomerRecord = function(idx) {
+                const user = (typeof registeredUsers !== 'undefined') ? registeredUsers[idx] : null;
+                if (orig_removeCustomerRecord) orig_removeCustomerRecord(idx);
+                if (user && user.phone) window.dbDeleteUser(user.phone);
+            };
+        }
     })();
 </script>
