@@ -5585,7 +5585,7 @@
             const preloader = document.getElementById('appPreloader');
             if (preloader) {
                 preloader.style.display = 'none';
-                preloader.remove();
+                try { preloader.remove(); } catch(e){}
             }
         };
 
@@ -5772,6 +5772,7 @@
                     if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
                     if (typeof renderLocalMenu === 'function') renderLocalMenu();
                     if (typeof renderDrinksMenu === 'function') renderDrinksMenu();
+                    if (typeof hideAppPreloader === 'function') hideAppPreloader();
                 }
             }
 
@@ -5784,7 +5785,6 @@
                 }
             }
 
-            // Restore registered user session automatically
             if (cachedUser) {
                 const parsedUser = JSON.parse(cachedUser);
                 if (parsedUser && parsedUser.phone) {
@@ -5815,25 +5815,19 @@
         
         const db = firebase.firestore();
 
-        // High-Speed Instant Connection Settings (Bypasses 15-20s stream timeout)
         try {
-            db.settings({
-                experimentalAutoDetectLongPolling: true,
-                merge: true
-            });
-        } catch(e){}
-
-        try {
-            db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+            db.enablePersistence({ synchronizeTabs: false }).catch(function() {});
         } catch(e){}
 
         // =========================================================================
-        // 3. PUBLIC REALTIME LISTENERS (Instant First-Batch Paint for New Users)
+        // 3. PUBLIC REALTIME LISTENERS (Mobile & Desktop Compatible)
         // =========================================================================
-        const handleIncomingMenu = (snapshot) => {
+        const handleIncomingMenu = function(snapshot) {
             const items = [];
-            snapshot.forEach((doc) => { items.push({ ...doc.data() }); });
-            items.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : 0);
+            snapshot.forEach(function(doc) { items.push(Object.assign({}, doc.data())); });
+            items.sort(function(a, b) { 
+                return (a.order !== undefined && b.order !== undefined) ? (a.order - b.order) : 0; 
+            });
 
             if (typeof menuData !== 'undefined') {
                 menuData.length = 0;
@@ -5855,14 +5849,16 @@
             }
         };
 
-        db.collection("menu").onSnapshot({ includeMetadataChanges: false }, handleIncomingMenu, (error) => {
+        db.collection("menu").onSnapshot({ includeMetadataChanges: false }, handleIncomingMenu, function(error) {
             console.error("Firestore Menu:", error.message);
         });
 
-        const handleIncomingPosts = (snapshot) => {
+        const handleIncomingPosts = function(snapshot) {
             const posts = [];
-            snapshot.forEach((doc) => { posts.push({ ...doc.data() }); });
-            posts.sort((a, b) => (a.order !== undefined && b.order !== undefined) ? a.order - b.order : (b.timestamp || 0) - (a.timestamp || 0));
+            snapshot.forEach(function(doc) { posts.push(Object.assign({}, doc.data())); });
+            posts.sort(function(a, b) {
+                return (a.order !== undefined && b.order !== undefined) ? (a.order - b.order) : ((b.timestamp || 0) - (a.timestamp || 0));
+            });
 
             if (typeof feedPosts !== 'undefined') {
                 feedPosts.length = 0;
@@ -5881,7 +5877,7 @@
             }
         };
 
-        db.collection("posts").onSnapshot({ includeMetadataChanges: false }, handleIncomingPosts, (error) => {
+        db.collection("posts").onSnapshot({ includeMetadataChanges: false }, handleIncomingPosts, function(error) {
             console.error("Firestore Posts:", error.message);
         });
 
@@ -5891,7 +5887,7 @@
         window.dbSaveOrder = function(order) {
             if (!order || !order.id) return;
             const cleanId = order.id.replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-            setTimeout(() => {
+            setTimeout(function() {
                 db.collection("orders").doc(cleanId).set(order, { merge: true }).catch(console.error);
             }, 0);
         };
@@ -5903,31 +5899,29 @@
             try {
                 localStorage.setItem('acp_current_user', JSON.stringify(user));
             } catch(e){}
-            setTimeout(() => {
+            setTimeout(function() {
                 db.collection("users").doc(cleanId).set(user, { merge: true }).catch(console.error);
             }, 0);
         };
 
         window.dbSavePost = function(post) {
             if (!post || !post.id) return;
-            setTimeout(() => {
+            setTimeout(function() {
                 db.collection("posts").doc(post.id.toString()).set(post, { merge: true }).catch(console.error);
             }, 0);
         };
 
         window.dbDeletePost = function(id) {
             if (!id) return;
-            setTimeout(() => {
+            setTimeout(function() {
                 db.collection("posts").doc(id.toString()).delete().catch(console.error);
             }, 0);
         };
 
-        // Returning Registered User Check / Lookup from Firestore
-        window.dbCheckAndRestoreUser = async function(phone) {
-            if (!phone) return null;
+        window.dbCheckAndRestoreUser = function(phone) {
+            if (!phone) return Promise.resolve(null);
             const cleanId = phone.replace(/[^0-9]/g, '');
-            try {
-                const doc = await db.collection("users").doc(cleanId).get();
+            return db.collection("users").doc(cleanId).get().then(function(doc) {
                 if (doc.exists) {
                     const userData = doc.data();
                     window.currentUser = userData;
@@ -5935,10 +5929,11 @@
                     if (typeof updateCustomerAuthUI === 'function') updateCustomerAuthUI();
                     return userData;
                 }
-            } catch(e) {
+                return null;
+            }).catch(function(e) {
                 console.error("User restore lookup error:", e);
-            }
-            return null;
+                return null;
+            });
         };
 
         const orig_finalizeOrder = window.finalizeOrderAndSendWhatsApp;
@@ -5958,7 +5953,6 @@
             }
         };
 
-        // Public Social Feed Interactions
         const orig_submitComment = window.submitComment;
         window.submitComment = function(id) {
             if (orig_submitComment) orig_submitComment(id);
@@ -6048,7 +6042,7 @@
                     switchAdminTab('orders');
                 }
 
-                setTimeout(() => {
+                setTimeout(function() {
                     if (typeof workingMenuData !== 'undefined') workingMenuData = [...menuData];
                     if (typeof workingFeedPosts !== 'undefined') workingFeedPosts = [...feedPosts];
                     if (typeof resetAdminForm === 'function') resetAdminForm();
@@ -6089,14 +6083,14 @@
 
             window.dbSaveFoodItem = function(item) {
                 if (!item || !item.id) return;
-                setTimeout(() => {
+                setTimeout(function() {
                     db.collection("menu").doc(item.id.toString()).set(item, { merge: true }).catch(console.error);
                 }, 0);
             };
 
             window.dbDeleteFoodItem = function(id) {
                 if (!id) return;
-                setTimeout(() => {
+                setTimeout(function() {
                     db.collection("menu").doc(id.toString()).delete().catch(console.error);
                 }, 0);
             };
@@ -6104,7 +6098,7 @@
             window.dbDeleteOrder = function(orderId) {
                 if (!orderId) return;
                 const cleanId = orderId.replace('#', '').replace(/[^a-zA-Z0-9]/g, '');
-                setTimeout(() => {
+                setTimeout(function() {
                     db.collection("orders").doc(cleanId).delete().catch(console.error);
                 }, 0);
             };
@@ -6112,30 +6106,30 @@
             window.dbDeleteUser = function(phone) {
                 if (!phone) return;
                 const cleanId = phone.replace(/[^0-9]/g, '');
-                setTimeout(() => {
+                setTimeout(function() {
                     db.collection("users").doc(cleanId).delete().catch(console.error);
                 }, 0);
             };
 
             db.collection("orders").onSnapshot(
                 { includeMetadataChanges: false },
-                (snapshot) => {
+                function(snapshot) {
                     const orders = [];
-                    snapshot.forEach((doc) => { orders.push({ ...doc.data() }); });
+                    snapshot.forEach(function(doc) { orders.push(Object.assign({}, doc.data())); });
                     if (typeof ordersList !== 'undefined') {
                         ordersList.length = 0;
                         if (orders.length > 0) ordersList.push(...orders);
                         if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
                     }
                 },
-                (error) => { console.error("Admin Orders:", error.message); }
+                function(error) { console.error("Admin Orders:", error.message); }
             );
 
             db.collection("users").onSnapshot(
                 { includeMetadataChanges: false },
-                (snapshot) => {
+                function(snapshot) {
                     const users = [];
-                    snapshot.forEach((doc) => { 
+                    snapshot.forEach(function(doc) { 
                         let userData = doc.data();
                         if (userData && !userData.phone && doc.id) {
                             userData.phone = doc.id;
@@ -6143,7 +6137,7 @@
                         users.push(userData); 
                     });
 
-                    users.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    users.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
 
                     if (typeof registeredUsers !== 'undefined') {
                         registeredUsers.length = 0;
@@ -6154,7 +6148,7 @@
                         if (typeof renderRegisteredUsers === 'function') renderRegisteredUsers();
                     }
                 },
-                (error) => { console.error("Admin Users:", error.message); }
+                function(error) { console.error("Admin Users:", error.message); }
             );
 
             const orig_handleFoodFormSubmit = window.handleFoodFormSubmit;
@@ -6174,7 +6168,7 @@
             window.saveCatalogOrderChanges = function() {
                 if (orig_saveCatalogOrderChanges) orig_saveCatalogOrderChanges();
                 if (typeof menuData !== 'undefined' && menuData.length > 0) {
-                    menuData.forEach((item, idx) => {
+                    menuData.forEach(function(item, idx) {
                         item.order = idx;
                         window.dbSaveFoodItem(item);
                     });
@@ -6231,7 +6225,7 @@
             window.savePostOrderChanges = function() {
                 if (orig_savePostOrderChanges) orig_savePostOrderChanges();
                 if (typeof feedPosts !== 'undefined' && feedPosts.length > 0) {
-                    feedPosts.forEach((post, idx) => {
+                    feedPosts.forEach(function(post, idx) {
                         post.order = idx;
                         window.dbSavePost(post);
                     });
